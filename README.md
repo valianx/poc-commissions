@@ -13,13 +13,15 @@ Dashboard corporativo de Next.js para gestión de Merchants, Channels y Commissi
 
 ## Stack Tecnológico
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **UI Components**: shadcn/ui
-- **State Management**: Zustand con persist middleware
-- **Forms**: React Hook Form + Zod
-- **Icons**: Lucide React
+- **Framework**: Next.js 16.0.3 (App Router + Turbopack)
+- **Language**: TypeScript 5.9.3
+- **Styling**: Tailwind CSS v4.1.17 (CSS-based configuration)
+- **PostCSS**: @tailwindcss/postcss + autoprefixer
+- **UI Components**: shadcn/ui (Badge, Button, Card, Dialog, Input, Label, Table)
+- **State Management**: Zustand 5.0.8 con persist middleware
+- **Forms**: React Hook Form 7.66.1 + Zod 4.1.12
+- **Icons**: Lucide React 0.554.0
+- **Package Manager**: pnpm 10.20.0
 
 ## Instalación
 
@@ -45,28 +47,48 @@ pnpm start
 ```
 src/
 ├── app/                          # Next.js App Router
-│   ├── (dashboard)/             # Layout dashboard
+│   ├── dashboard/               # Dashboard routes
 │   │   ├── merchants/           # Gestión de merchants
-│   │   ├── channels/            # Gestión de channels
+│   │   │   ├── [id]/           # Detalle de merchant
+│   │   │   ├── new/            # Crear merchant
+│   │   │   └── page.tsx        # Lista de merchants
+│   │   ├── channels/            # Gestión de channels y PSPs
+│   │   │   ├── new/            # Crear channel
+│   │   │   ├── psps/new/       # Crear PSP
+│   │   │   └── page.tsx        # Lista de channels/PSPs
 │   │   ├── commissions/         # Gestión de comisiones
+│   │   │   ├── [merchantId]/   # Comisiones por merchant
+│   │   │   │   ├── configure/  # Configurar comisión
+│   │   │   │   └── edit/       # Editar comisión
+│   │   │   └── page.tsx        # Vista merchant-centric
 │   │   ├── simulator/           # Simulador de pagos
-│   │   └── dashboard/           # Dashboard principal
+│   │   │   └── page.tsx
+│   │   ├── layout.tsx           # Dashboard layout con sidebar
+│   │   └── page.tsx             # Dashboard overview
+│   ├── globals.css              # Tailwind CSS v4 configuration
 │   ├── layout.tsx               # Root layout
-│   └── page.tsx                 # Home page
+│   └── page.tsx                 # Landing page
 ├── components/                   # Componentes React
 │   ├── ui/                      # shadcn/ui components
-│   ├── dashboard/               # Componentes dashboard
-│   ├── merchants/               # Componentes merchants
-│   ├── channels/                # Componentes channels
-│   └── simulator/               # Componente simulador
+│   ├── dashboard/               # Sidebar y Topbar
+│   ├── merchants/               # Formularios y tablas
+│   ├── channels/                # Channel y PSP forms
+│   ├── commissions/             # Dialogs de configuración
+│   └── simulator/               # Calculadora de pagos
 ├── lib/                         # Lógica de negocio
-│   ├── repositories/            # Data access layer
-│   ├── services/                # Business logic
+│   ├── repositories/            # Data access layer (localStorage)
+│   ├── services/                # Business logic (calculadora)
 │   ├── stores/                  # Zustand stores
 │   ├── validations/             # Zod schemas
-│   └── utils.ts                 # Funciones helper
-├── types/                       # TypeScript types
-└── seed/                        # Datos iniciales
+│   └── utils.ts                 # cn() helper
+├── types/                       # TypeScript interfaces
+│   ├── merchant.ts
+│   ├── channel.ts
+│   ├── commission.ts
+│   ├── simulator.ts
+│   └── storage.ts
+└── seed/                        # Datos de ejemplo
+    └── seed-data.ts
 ```
 
 ## Funcionalidades Principales
@@ -83,11 +105,15 @@ src/
 - Estado activo/inactivo
 
 ### Commissions
-- Templates de comisión (Fija, Porcentual, Mixta)
-- Parámetros configurables
-- Asignaciones por merchant-país-canal
-- Configuración de impuestos
-- Comisiones de PSP
+
+- **Vista Merchant-Centric**: Lista de merchants con progreso de configuración
+- **Templates de comisión**: Fija, Porcentual, Mixta
+- **Parámetros configurables**: Valores, rangos, monedas
+- **Asignaciones**: Por merchant-país-canal con fechas de vigencia
+- **Configuración de impuestos**: VAT/IVA por jurisdicción
+- **Comisiones de PSP**: Configuración por proveedor y canal
+- **Estados**: DRAFT, APPROVED, PUBLISHED para templates
+- **Estados de asignación**: ACTIVE, EXPIRED, CANCELLED
 
 ### Simulador de Pagos
 - Selección de merchant, país y canal
@@ -138,12 +164,47 @@ pnpm start
 pnpm lint
 ```
 
+## Rutas de Navegación
+
+- `/` - Landing page con auto-redirect a dashboard
+- `/dashboard` - Vista general con métricas
+- `/dashboard/merchants` - Lista de merchants
+  - `/dashboard/merchants/new` - Crear merchant
+  - `/dashboard/merchants/[id]` - Detalle de merchant
+- `/dashboard/channels` - Tabs de Channels y PSPs
+  - `/dashboard/channels/new` - Crear channel
+  - `/dashboard/channels/psps/new` - Crear PSP
+- `/dashboard/commissions` - Vista merchant-centric de comisiones
+  - `/dashboard/commissions/[merchantId]` - Detalle por merchant
+  - `/dashboard/commissions/[merchantId]/configure` - Configurar comisión
+  - `/dashboard/commissions/[merchantId]/edit/[assignmentId]` - Editar asignación
+- `/dashboard/simulator` - Simulador de pagos interactivo
+
+## Detalles Técnicos
+
+### Tailwind CSS v4
+
+Este proyecto usa la nueva versión de Tailwind CSS v4 con configuración basada en CSS:
+
+- Configuración en `src/app/globals.css` usando `@theme`
+- Variables CSS con prefijo `--color-*` para colores
+- PostCSS plugin `@tailwindcss/postcss` en lugar del plugin legacy
+- No se usa archivo `tailwind.config.js/ts`
+
+### Arquitectura de Datos
+
+- **Repository Pattern**: Abstracción sobre localStorage
+- **Zustand Stores**: Estado global con persistencia automática
+- **Zod Validation**: Validación de formularios en cliente
+- **Type Safety**: Full TypeScript con interfaces estrictas
+
 ## Notas Importantes
 
 - Este es un **POC** (Proof of Concept) para presentación
 - Los datos se almacenan en **localStorage** del navegador
 - No está diseñado para producción
 - Para migrar a producción, reemplazar repositories con llamadas API REST
+- La primera carga ejecuta automáticamente el seeder con datos de ejemplo
 
 ## Migración a API Real
 

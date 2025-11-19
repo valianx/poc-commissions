@@ -5,7 +5,11 @@
       "Bash(pnpm remove:*)",
       "Bash(del tailwind.config.ts)",
       "Bash(git add:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(pnpm build:*)"
     ],
     "deny": [],
     "ask": []

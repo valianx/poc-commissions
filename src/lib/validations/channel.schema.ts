@@ -17,7 +17,7 @@ export const channelSchema = z.object({
     .string()
     .min(10, "La descripción debe tener al menos 10 caracteres")
     .max(500, "La descripción no puede superar los 500 caracteres"),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 export const pspSchema = z.object({
@@ -33,7 +33,11 @@ export const pspSchema = z.object({
     .string()
     .min(3, "El nombre debe tener al menos 3 caracteres")
     .max(100, "El nombre no puede superar los 100 caracteres"),
-  isActive: z.boolean().default(true),
+  apiUrl: z
+    .string()
+    .url("Debe ser una URL válida")
+    .optional(),
+  isActive: z.boolean(),
 });
 
 export type ChannelFormData = z.infer<typeof channelSchema>;

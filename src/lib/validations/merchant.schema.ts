@@ -13,23 +13,21 @@ export const merchantSchema = z.object({
     )
     .min(3, "El código debe tener al menos 3 caracteres")
     .max(50, "El código no puede superar los 50 caracteres"),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
   countries: z
     .array(z.string().length(2, "Código de país debe tener 2 caracteres"))
     .min(1, "Debe seleccionar al menos un país"),
-  balanceEvaluationEnabled: z.boolean().default(false),
+  balanceEvaluationEnabled: z.boolean(),
   depositCallbackUrl: z
     .string()
     .url("Debe ser una URL válida")
-    .nullable()
-    .optional(),
+    .nullable(),
   withdrawalCallbackUrl: z
     .string()
     .url("Debe ser una URL válida")
-    .nullable()
-    .optional(),
-  callbackApiKeyRef: z.string().nullable().optional(),
-  callbackSecretKeyRef: z.string().nullable().optional(),
+    .nullable(),
+  callbackApiKeyRef: z.string().nullable(),
+  callbackSecretKeyRef: z.string().nullable(),
 });
 
 export type MerchantFormData = z.infer<typeof merchantSchema>;

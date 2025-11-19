@@ -13,27 +13,25 @@ export const commissionTemplateSchema = z.object({
     .min(5, "El nombre debe tener al menos 5 caracteres")
     .max(200, "El nombre no puede superar los 200 caracteres"),
   type: z.enum(["FIXED", "PERCENTAGE", "MIXED"], {
-    errorMap: () => ({ message: "Tipo de comisión inválido" }),
+    message: "Tipo de comisión inválido",
   }),
-  status: z
-    .enum(["DRAFT", "APPROVED", "PUBLISHED"], {
-      errorMap: () => ({ message: "Estado inválido" }),
-    })
-    .default("DRAFT"),
+  status: z.enum(["DRAFT", "APPROVED", "PUBLISHED"], {
+    message: "Estado inválido",
+  }),
   effectiveDate: z.string().datetime(),
-  expirationDate: z.string().datetime().nullable().optional(),
+  expirationDate: z.string().datetime().nullable(),
   createdBy: z.string().email("Debe ser un email válido"),
 });
 
 export const commissionParameterSchema = z.object({
   commissionTemplateId: z.string().uuid("ID de template inválido"),
   parameterType: z.enum(["PERCENTAGE", "FIXED_FEE", "MIN_RANGE", "MAX_RANGE"], {
-    errorMap: () => ({ message: "Tipo de parámetro inválido" }),
+    message: "Tipo de parámetro inválido",
   }),
   value: z.number().min(0, "El valor debe ser mayor o igual a 0"),
   currency: z.string().length(3, "El código de moneda debe tener 3 caracteres"),
-  minRange: z.number().nullable().optional(),
-  maxRange: z.number().nullable().optional(),
+  minRange: z.number().nullable(),
+  maxRange: z.number().nullable(),
 });
 
 export const commissionAssignmentSchema = z.object({
@@ -45,12 +43,10 @@ export const commissionAssignmentSchema = z.object({
     .toUpperCase(),
   channelCode: z.string().min(2, "Código de canal inválido"),
   startDate: z.string().datetime(),
-  endDate: z.string().datetime().nullable().optional(),
-  status: z
-    .enum(["ACTIVE", "EXPIRED", "CANCELLED"], {
-      errorMap: () => ({ message: "Estado inválido" }),
-    })
-    .default("ACTIVE"),
+  endDate: z.string().datetime().nullable(),
+  status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED"], {
+    message: "Estado inválido",
+  }),
   assignedBy: z.string().email("Debe ser un email válido"),
 });
 
@@ -67,7 +63,7 @@ export const merchantTaxConfigSchema = z.object({
     .number()
     .min(0, "La tasa debe ser mayor o igual a 0")
     .max(1, "La tasa debe ser menor o igual a 1"),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 export const pspCommissionSchema = z.object({
@@ -79,12 +75,12 @@ export const pspCommissionSchema = z.object({
     .toUpperCase(),
   channelCode: z.string().min(2, "Código de canal inválido"),
   commissionType: z.enum(["FIXED", "PERCENTAGE", "MIXED"], {
-    errorMap: () => ({ message: "Tipo de comisión inválido" }),
+    message: "Tipo de comisión inválido",
   }),
-  percentage: z.number().min(0).max(1).default(0),
-  fixedFee: z.number().min(0).default(0),
+  percentage: z.number().min(0).max(1),
+  fixedFee: z.number().min(0),
   currency: z.string().length(3, "El código de moneda debe tener 3 caracteres"),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
 });
 
 export const paymentSimulationSchema = z.object({

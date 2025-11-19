@@ -1,4 +1,4 @@
-export class BaseRepository<T extends { id: string }> {
+export class BaseRepository<T extends { id: string; deletedAt?: string | null }> {
   constructor(private storageKey: string) {}
 
   private isBrowser(): boolean {

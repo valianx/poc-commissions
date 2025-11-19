@@ -43,6 +43,7 @@ interface CommissionsState {
   // Assignment Actions
   fetchAssignments: () => void;
   createAssignment: (assignment: CreateCommissionAssignmentDto) => void;
+  updateAssignment: (id: string, assignment: Partial<CommissionAssignment>) => void;
   getAssignmentsByMerchant: (merchantId: string) => CommissionAssignment[];
 
   // Tax Config Actions
@@ -162,6 +163,21 @@ export const useCommissionsStore = create<CommissionsState>()(
           set({ assignments: [...get().assignments, assignment] });
         } catch (error) {
           set({ error: "Failed to create assignment" });
+        }
+      },
+
+      updateAssignment: (id, assignmentData) => {
+        try {
+          const updated = commissionAssignmentsRepository.update(id, assignmentData);
+          if (updated) {
+            set({
+              assignments: get().assignments.map((a) =>
+                a.id === id ? updated : a
+              ),
+            });
+          }
+        } catch (error) {
+          set({ error: "Failed to update assignment" });
         }
       },
 

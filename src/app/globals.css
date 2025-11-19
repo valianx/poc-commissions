@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --color-border: hsl(214 32% 91%);
+  --color-input: hsl(214 32% 91%);
+  --color-ring: hsl(221 83% 53%);
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(222 47% 11%);
+  --color-primary: hsl(221 83% 53%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(215 20% 65%);
+  --color-secondary-foreground: hsl(0 0% 100%);
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-muted: hsl(215 20% 96%);
+  --color-muted-foreground: hsl(215 16% 47%);
+  --color-accent: hsl(142 71% 45%);
+  --color-accent-foreground: hsl(0 0% 100%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222 47% 11%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(222 47% 11%);
+
+  --radius-lg: 0.5rem;
+  --radius-md: calc(0.5rem - 2px);
+  --radius-sm: calc(0.5rem - 4px);
+}
+
+.dark {
+  --color-background: hsl(222 47% 11%);
+  --color-foreground: hsl(0 0% 97%);
+  --color-card: hsl(222 47% 15%);
+  --color-card-foreground: hsl(0 0% 97%);
+  --color-popover: hsl(222 47% 15%);
+  --color-popover-foreground: hsl(0 0% 97%);
+  --color-secondary: hsl(215 20% 30%);
+  --color-muted: hsl(215 20% 20%);
+  --color-muted-foreground: hsl(215 16% 65%);
+  --color-border: hsl(215 20% 30%);
+  --color-input: hsl(215 20% 30%);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}

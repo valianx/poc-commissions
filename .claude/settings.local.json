@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm add:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(del tailwind.config.ts)",
+      "Bash(git add:*)",
+      "Bash(git rebase:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

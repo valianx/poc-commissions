@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Edit } from "lucide-react";
+import { Plus, Trash2, Edit, Eye } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -205,7 +205,16 @@ export default function ChannelsPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              onClick={() => router.push(`/dashboard/channels/psps/${psp.id}/view`)}
+                              title="Ver detalles"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => router.push(`/dashboard/channels/psps/${psp.id}`)}
+                              title="Editar"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -213,6 +222,7 @@ export default function ChannelsPage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeletePSP(psp.id, psp.name)}
+                              title="Eliminar"
                             >
                               <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>

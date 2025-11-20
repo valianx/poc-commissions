@@ -10,13 +10,13 @@ import { useEffect } from "react";
 export default function DashboardPage() {
   const { merchants, fetchMerchants } = useMerchantsStore();
   const { channels, fetchChannels } = useChannelsStore();
-  const { templates, fetchTemplates } = useCommissionsStore();
+  const { assignments, fetchAssignments } = useCommissionsStore();
 
   useEffect(() => {
     fetchMerchants();
     fetchChannels();
-    fetchTemplates();
-  }, [fetchMerchants, fetchChannels, fetchTemplates]);
+    fetchAssignments();
+  }, [fetchMerchants, fetchChannels, fetchAssignments]);
 
   const stats = [
     {
@@ -32,8 +32,8 @@ export default function DashboardPage() {
       color: "bg-green-500",
     },
     {
-      name: "Commission Templates",
-      value: templates.filter((t) => t.status === "APPROVED").length,
+      name: "Active Commissions",
+      value: assignments.filter((a) => a.status === "ACTIVE").length,
       icon: Percent,
       color: "bg-purple-500",
     },

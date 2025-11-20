@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Plus } from "lucide-react";
+import { Eye } from "lucide-react";
 import { Merchant } from "@/types/merchant";
 import { useRouter } from "next/navigation";
 
@@ -75,17 +75,11 @@ export default function CommissionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Gestión de Comisiones</h1>
-          <p className="text-muted-foreground">
-            Configure comisiones por merchant, canal y país
-          </p>
-        </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Nueva Configuración
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold">Gestión de Comisiones</h1>
+        <p className="text-muted-foreground">
+          Configure comisiones por merchant, canal y país
+        </p>
       </div>
 
       {/* Stats */}
@@ -243,7 +237,6 @@ export default function CommissionsPage() {
                               size="sm"
                               onClick={() => handleConfigureMerchant(row.merchant)}
                             >
-                              <Plus className="mr-1 h-4 w-4" />
                               Configurar
                             </Button>
                           )}

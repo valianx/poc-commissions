@@ -158,6 +158,7 @@ export const useCommissionsStore = create<CommissionsState>()(
             ...assignmentData,
             id: uuidv4(),
             createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           };
           commissionAssignmentsRepository.create(assignment);
           set({ assignments: [...get().assignments, assignment] });
@@ -168,7 +169,11 @@ export const useCommissionsStore = create<CommissionsState>()(
 
       updateAssignment: (id, assignmentData) => {
         try {
-          const updated = commissionAssignmentsRepository.update(id, assignmentData);
+          const dataWithTimestamp = {
+            ...assignmentData,
+            updatedAt: new Date().toISOString(),
+          };
+          const updated = commissionAssignmentsRepository.update(id, dataWithTimestamp);
           if (updated) {
             set({
               assignments: get().assignments.map((a) =>

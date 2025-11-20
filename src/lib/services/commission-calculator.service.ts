@@ -22,22 +22,47 @@ export class CommissionCalculatorService {
       );
     }
 
-    // 2. Obtener template y parámetros
+    // 2. Calculate base commission (support both new and legacy models)
     const assignment = assignments[0];
-    const template = commissionTemplatesRepository.getById(
-      assignment.commissionTemplateId
-    );
-    if (!template) {
-      throw new Error("Template de comisión no encontrado");
+    let baseCommission: number;
+    let percentage: number | null = null;
+    let fixedFee: number | null = null;
+    let type: "FIXED" | "PERCENTAGE" | "MIXED";
+
+    if (assignment.basePercentageValue !== undefined || assignment.baseFixedValue !== undefined) {
+      // New model: direct values
+      const percentageComm = (assignment.basePercentageValue || 0) * simulation.amount;
+      const fixedComm = assignment.baseFixedValue || 0;
+      baseCommission = percentageComm + fixedComm;
+      percentage = assignment.basePercentageValue ?? null;
+      fixedFee = assignment.baseFixedValue ?? null;
+
+      if (assignment.basePercentageValue && assignment.baseFixedValue) {
+        type = "MIXED";
+      } else if (assignment.basePercentageValue) {
+        type = "PERCENTAGE";
+      } else {
+        type = "FIXED";
+      }
+    } else {
+      // Legacy model: template-based
+      const template = commissionTemplatesRepository.getById(
+        assignment.commissionTemplateId!
+      );
+      if (!template) {
+        throw new Error("Template de comisión no encontrado");
+      }
+
+      const parameters = commissionParametersRepository.getByTemplateId(
+        template.id
+      );
+
+      const result = this.calculateBaseCommission(simulation.amount, parameters);
+      baseCommission = result.baseCommission;
+      percentage = result.percentage;
+      fixedFee = result.fixedFee;
+      type = result.type;
     }
-
-    const parameters = commissionParametersRepository.getByTemplateId(
-      template.id
-    );
-
-    // 3. Calcular comisión base
-    const { type, baseCommission, percentage, fixedFee } =
-      this.calculateBaseCommission(simulation.amount, parameters);
 
     // 4. Obtener impuestos
     const taxes = merchantTaxConfigsRepository.getActiveConfigs(
@@ -100,8 +125,8 @@ export class CommissionCalculatorService {
       merchantCommission: {
         type,
         baseAmount: baseCommission,
-        percentage,
-        fixedFee,
+        percentage: percentage ?? undefined,
+        fixedFee: fixedFee ?? undefined,
         subtotal: baseCommission,
       },
       taxes: taxesBreakdown,

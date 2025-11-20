@@ -10,24 +10,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Building2, MapPin, CreditCard, Save } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { ArrowLeft, Building2, MapPin, CreditCard, Save, Plus, X } from "lucide-react";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { commissionAssignmentSchema } from "@/lib/validations/commission.schema";
+import { v4 as uuidv4 } from "uuid";
 
-const configureCommissionSchema = z.object({
-  templateId: z.string().min(1, "Debe seleccionar un template de comisión"),
+// Simplified form schema (without ranges for now, we'll add them later)
+const configureSimpleCommissionSchema = z.object({
   countryCode: z.string().length(2, "Código de país inválido"),
   channelCode: z.string().min(1, "Debe seleccionar un canal"),
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime().nullable().optional(),
+  basePercentageValue: z.string().optional(),
+  baseFixedValue: z.string().optional(),
   assignedBy: z.string().email("Debe ser un email válido"),
-});
+}).refine(
+  (data) => data.basePercentageValue || data.baseFixedValue,
+  {
+    message: "Debe especificar al menos un valor de comisión (porcentaje o fijo)",
+    path: ["basePercentageValue"],
+  }
+);
 
-type ConfigureCommissionFormData = z.infer<typeof configureCommissionSchema>;
+type ConfigureSimpleCommissionFormData = z.infer<typeof configureSimpleCommissionSchema>;
 
-export default function ConfigureCommissionPage() {
+export default function ConfigureSimpleCommissionPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -37,27 +44,17 @@ export default function ConfigureCommissionPage() {
   const preSelectedCountry = searchParams.get("country");
   const preSelectedChannel = searchParams.get("channel");
 
-  const {
-    templates,
-    parameters,
-    fetchTemplates,
-    fetchParameters,
-    createAssignment,
-  } = useCommissionsStore();
+  const { createAssignment } = useCommissionsStore();
   const { merchants, fetchMerchants } = useMerchantsStore();
   const { channels, fetchChannels } = useChannelsStore();
-  const { configs, fetchConfigs, getConfigsByMerchant } =
+  const { fetchConfigs, getConfigsByMerchant } =
     useMerchantChannelConfigStore();
-
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
 
   useEffect(() => {
     fetchMerchants();
     fetchChannels();
-    fetchTemplates();
-    fetchParameters();
     fetchConfigs();
-  }, [fetchMerchants, fetchChannels, fetchTemplates, fetchParameters, fetchConfigs]);
+  }, [fetchMerchants, fetchChannels, fetchConfigs]);
 
   const merchant = merchants.find((m) => m.id === merchantId);
 
@@ -66,13 +63,11 @@ export default function ConfigureCommissionPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
     watch,
-    setValue,
-  } = useForm<ConfigureCommissionFormData>({
-    resolver: zodResolver(configureCommissionSchema),
+  } = useForm<ConfigureSimpleCommissionFormData>({
+    resolver: zodResolver(configureSimpleCommissionSchema),
     defaultValues: {
       countryCode: preSelectedCountry || "",
       channelCode: preSelectedChannel || "",
-      startDate: new Date().toISOString().slice(0, 16),
       assignedBy: "admin@zippy.com",
     },
   });
@@ -86,14 +81,12 @@ export default function ConfigureCommissionPage() {
   // Filter channels based on merchant config and selected country
   const getAvailableChannels = () => {
     if (!selectedCountry) {
-      // If no country selected, show all merchant's configured channels
       const configuredChannelIds = merchantConfigs
         .filter((c) => c.isActive)
         .map((c) => c.channelId);
       return channels.filter((ch) => configuredChannelIds.includes(ch.id));
     }
 
-    // Filter by country and active status
     const configsForCountry = merchantConfigs.filter(
       (c) => c.countryCode === selectedCountry && c.isActive
     );
@@ -103,12 +96,6 @@ export default function ConfigureCommissionPage() {
   };
 
   const availableChannels = getAvailableChannels();
-
-  useEffect(() => {
-    if (watch("templateId")) {
-      setSelectedTemplateId(watch("templateId"));
-    }
-  }, [watch("templateId")]);
 
   if (!merchant) {
     return (
@@ -127,14 +114,27 @@ export default function ConfigureCommissionPage() {
     );
   }
 
-  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
-  const templateParams = selectedTemplateId
-    ? parameters.filter((p) => p.commissionTemplateId === selectedTemplateId)
-    : [];
+  const onSubmit = async (data: ConfigureSimpleCommissionFormData) => {
+    try {
+      await createAssignment({
+        merchantId,
+        countryCode: data.countryCode,
+        channelCode: data.channelCode,
+        basePercentageValue: data.basePercentageValue
+          ? parseFloat(data.basePercentageValue) / 100
+          : null,
+        baseFixedValue: data.baseFixedValue
+          ? parseFloat(data.baseFixedValue)
+          : null,
+        commissionRanges: [],
+        status: "ACTIVE",
+        assignedBy: data.assignedBy,
+      });
 
-  const onSubmit = async (data: ConfigureCommissionFormData) => {
-    // Redirect to new simplified form
-    router.push(`/dashboard/commissions/${merchantId}/configure-simple?country=${data.countryCode}&channel=${data.channelCode}`);
+      router.push(`/dashboard/commissions/${merchantId}`);
+    } catch (error) {
+      console.error("Error creating commission assignment:", error);
+    }
   };
 
   const getChannelName = (code: string) => {
@@ -254,128 +254,69 @@ export default function ConfigureCommissionPage() {
           </CardContent>
         </Card>
 
-        {/* Commission Template Selection */}
+        {/* Commission Values */}
         <Card>
           <CardHeader>
-            <CardTitle>Template de Comisión</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="templateId">Template *</Label>
-              <select
-                id="templateId"
-                {...register("templateId")}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">Seleccionar template</option>
-                {templates
-                  .filter((t) => t.status === "APPROVED" || t.status === "PUBLISHED")
-                  .map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name} ({template.type})
-                    </option>
-                  ))}
-              </select>
-              {errors.templateId && (
-                <p className="text-sm text-red-500">{errors.templateId.message}</p>
-              )}
-            </div>
-
-            {/* Template Details */}
-            {selectedTemplate && (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-semibold text-blue-900">
-                    Detalles del Template
-                  </h3>
-                  <Badge
-                    variant={
-                      selectedTemplate.status === "PUBLISHED"
-                        ? "default"
-                        : "secondary"
-                    }
-                  >
-                    {selectedTemplate.status}
-                  </Badge>
-                </div>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-blue-700">Código:</span>
-                    <span className="font-medium text-blue-900">
-                      {selectedTemplate.code}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-blue-700">Tipo:</span>
-                    <span className="font-medium text-blue-900">
-                      {selectedTemplate.type}
-                    </span>
-                  </div>
-
-                  {templateParams.length > 0 && (
-                    <div className="mt-3 rounded-md border border-blue-300 bg-white p-3">
-                      <p className="mb-2 text-sm font-medium text-blue-900">
-                        Parámetros
-                      </p>
-                      {templateParams.map((param) => (
-                        <div
-                          key={param.id}
-                          className="flex justify-between text-sm"
-                        >
-                          <span className="text-gray-600">
-                            {param.parameterType === "PERCENTAGE"
-                              ? "Porcentaje"
-                              : "Tarifa Fija"}
-                            :
-                          </span>
-                          <span className="font-mono font-semibold">
-                            {param.parameterType === "PERCENTAGE"
-                              ? `${(param.value * 100).toFixed(2)}%`
-                              : `${param.value} ${param.currency}`}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Validity Period */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Vigencia</CardTitle>
+            <CardTitle>Comisión Base (Permanente)</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              La comisión base aplica siempre y no tiene fecha de vencimiento
+            </p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Fecha de Inicio *</Label>
+                <Label htmlFor="basePercentageValue">Comisión Porcentual (%)</Label>
                 <Input
-                  id="startDate"
-                  type="datetime-local"
-                  {...register("startDate")}
+                  id="basePercentageValue"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  placeholder="Ej: 3.5"
+                  {...register("basePercentageValue")}
                 />
-                {errors.startDate && (
-                  <p className="text-sm text-red-500">{errors.startDate.message}</p>
+                <p className="text-xs text-muted-foreground">
+                  Ingrese el porcentaje (ej: 3.5 para 3.5%)
+                </p>
+                {errors.basePercentageValue && (
+                  <p className="text-sm text-red-500">{errors.basePercentageValue.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="endDate">Fecha de Fin (Opcional)</Label>
+                <Label htmlFor="baseFixedValue">Comisión Fija</Label>
                 <Input
-                  id="endDate"
-                  type="datetime-local"
-                  {...register("endDate")}
+                  id="baseFixedValue"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Ej: 500"
+                  {...register("baseFixedValue")}
                 />
-                {errors.endDate && (
-                  <p className="text-sm text-red-500">{errors.endDate.message}</p>
+                <p className="text-xs text-muted-foreground">
+                  Ingrese el monto fijo en la moneda del país
+                </p>
+                {errors.baseFixedValue && (
+                  <p className="text-sm text-red-500">{errors.baseFixedValue.message}</p>
                 )}
               </div>
             </div>
 
+            <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+              <p className="text-sm text-blue-900">
+                <strong>Nota:</strong> Puede configurar solo porcentaje, solo fijo, o ambos.
+                Si configura ambos, se aplicarán las dos comisiones.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Assigned By */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Información de Asignación</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="assignedBy">Asignado Por *</Label>
               <Input

@@ -121,9 +121,22 @@ export default function MerchantCommissionsPage() {
     return parameters.filter((p) => p.commissionTemplateId === templateId);
   };
 
-  const renderCommissionValue = (templateId: string) => {
-    const template = getTemplate(templateId);
-    const params = getTemplateParameters(templateId);
+  const renderCommissionValue = (assignment: any) => {
+    // New model: direct values
+    if (assignment.basePercentageValue !== undefined || assignment.baseFixedValue !== undefined) {
+      const parts = [];
+      if (assignment.basePercentageValue !== null) {
+        parts.push(`${(assignment.basePercentageValue * 100).toFixed(2)}%`);
+      }
+      if (assignment.baseFixedValue !== null) {
+        parts.push(`$${assignment.baseFixedValue.toFixed(2)}`);
+      }
+      return parts.length > 0 ? parts.join(" + ") : "N/A";
+    }
+
+    // Legacy model: template-based
+    const template = getTemplate(assignment.commissionTemplateId);
+    const params = getTemplateParameters(assignment.commissionTemplateId);
 
     if (!template) return "N/A";
 
@@ -166,7 +179,9 @@ export default function MerchantCommissionsPage() {
               a.status === "ACTIVE"
           );
 
-          const template = assignment ? getTemplate(assignment.commissionTemplateId) : null;
+          const template = assignment && (assignment as any).commissionTemplateId
+            ? getTemplate((assignment as any).commissionTemplateId)
+            : null;
 
           // Get PSP info from merchant channel config
           const psp = psps.find((p) => p.id === config.pspId);
@@ -211,11 +226,11 @@ export default function MerchantCommissionsPage() {
           channelName: channel.name,
           isConfigured: !!assignment,
           assignmentId: assignment?.id,
-          templateId: assignment?.commissionTemplateId,
+          templateId: (assignment as any)?.commissionTemplateId,
           templateName: template?.name,
           templateType: template?.type,
           commissionValue: assignment
-            ? renderCommissionValue(assignment.commissionTemplateId)
+            ? renderCommissionValue(assignment)
             : undefined,
           pspName: psp?.name,
           pspCommissionValue,
@@ -281,7 +296,7 @@ export default function MerchantCommissionsPage() {
             </p>
           </div>
         </div>
-        <Button onClick={() => router.push(`/dashboard/commissions/${merchantId}/configure`)}>
+        <Button onClick={() => router.push(`/dashboard/commissions/${merchantId}/configure-simple`)}>
           <Plus className="mr-2 h-4 w-4" />
           Nueva Configuración
         </Button>
@@ -546,7 +561,7 @@ export default function MerchantCommissionsPage() {
                               size="sm"
                               onClick={() =>
                                 router.push(
-                                  `/dashboard/commissions/${merchantId}/configure?country=${row.countryCode}&channel=${row.channelCode}`
+                                  `/dashboard/commissions/${merchantId}/configure-simple?country=${row.countryCode}&channel=${row.channelCode}`
                                 )
                               }
                             >

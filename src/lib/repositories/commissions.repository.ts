@@ -51,7 +51,8 @@ class CommissionAssignmentsRepository extends BaseRepository<CommissionAssignmen
         a.countryCode === countryCode &&
         a.channelCode === channelCode &&
         a.status === "ACTIVE" &&
-        new Date(a.startDate) <= now &&
+        // Legacy model: check date ranges if startDate exists
+        (!a.startDate || new Date(a.startDate) <= now) &&
         (!a.endDate || new Date(a.endDate) >= now)
     );
   }

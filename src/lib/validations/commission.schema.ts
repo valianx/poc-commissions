@@ -1,5 +1,57 @@
 import { z } from "zod";
 
+// Commission range schema for amount-based overrides
+export const commissionRangeSchema = z.object({
+  minAmount: z.number().min(0, "El monto mínimo debe ser mayor o igual a 0"),
+  maxAmount: z.number().min(0, "El monto máximo debe ser mayor o igual a 0"),
+  percentageValue: z
+    .number()
+    .min(0)
+    .max(1, "El porcentaje debe estar entre 0 y 1")
+    .nullable(),
+  fixedValue: z.number().min(0, "El valor fijo debe ser mayor o igual a 0").nullable(),
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+}).refine(
+  (data) => data.percentageValue !== null || data.fixedValue !== null,
+  {
+    message: "Debe especificar un valor porcentual y/o un valor fijo",
+  }
+).refine(
+  (data) => data.maxAmount > data.minAmount,
+  {
+    message: "El monto máximo debe ser mayor que el monto mínimo",
+  }
+);
+
+// New simplified commission assignment schema (supports both new and legacy models)
+export const commissionAssignmentSchema = z.object({
+  merchantId: z.string().uuid("ID de merchant inválido"),
+  countryCode: z
+    .string()
+    .length(2, "El código de país debe tener 2 caracteres")
+    .toUpperCase(),
+  channelCode: z.string().min(2, "Código de canal inválido"),
+  // New model fields
+  basePercentageValue: z
+    .number()
+    .min(0)
+    .max(1, "El porcentaje debe estar entre 0 y 1")
+    .nullable()
+    .optional(),
+  baseFixedValue: z.number().min(0, "El valor fijo debe ser mayor o igual a 0").nullable().optional(),
+  commissionRanges: z.array(commissionRangeSchema).optional(),
+  // Legacy model fields
+  commissionTemplateId: z.string().uuid("ID de template inválido").optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().nullable().optional(),
+  status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED"], {
+    message: "Estado inválido",
+  }),
+  assignedBy: z.string().email("Debe ser un email válido"),
+});
+
+// Legacy schemas - kept for backward compatibility
 export const commissionTemplateSchema = z.object({
   code: z
     .string()
@@ -32,22 +84,6 @@ export const commissionParameterSchema = z.object({
   currency: z.string().length(3, "El código de moneda debe tener 3 caracteres"),
   minRange: z.number().nullable(),
   maxRange: z.number().nullable(),
-});
-
-export const commissionAssignmentSchema = z.object({
-  commissionTemplateId: z.string().uuid("ID de template inválido"),
-  merchantId: z.string().uuid("ID de merchant inválido"),
-  countryCode: z
-    .string()
-    .length(2, "El código de país debe tener 2 caracteres")
-    .toUpperCase(),
-  channelCode: z.string().min(2, "Código de canal inválido"),
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime().nullable(),
-  status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED"], {
-    message: "Estado inválido",
-  }),
-  assignedBy: z.string().email("Debe ser un email válido"),
 });
 
 export const merchantTaxConfigSchema = z.object({
@@ -94,15 +130,18 @@ export const paymentSimulationSchema = z.object({
   currency: z.string().length(3, "El código de moneda debe tener 3 caracteres"),
 });
 
-export type CommissionTemplateFormData = z.infer<
-  typeof commissionTemplateSchema
->;
-export type CommissionParameterFormData = z.infer<
-  typeof commissionParameterSchema
->;
+export type CommissionRangeFormData = z.infer<typeof commissionRangeSchema>;
 export type CommissionAssignmentFormData = z.infer<
   typeof commissionAssignmentSchema
 >;
 export type MerchantTaxConfigFormData = z.infer<typeof merchantTaxConfigSchema>;
 export type PSPCommissionFormData = z.infer<typeof pspCommissionSchema>;
 export type PaymentSimulationFormData = z.infer<typeof paymentSimulationSchema>;
+
+// Legacy form data types
+export type CommissionTemplateFormData = z.infer<
+  typeof commissionTemplateSchema
+>;
+export type CommissionParameterFormData = z.infer<
+  typeof commissionParameterSchema
+>;

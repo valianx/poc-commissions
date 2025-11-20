@@ -25,25 +25,57 @@ export class CommissionCalculatorService {
 
     // 2. Calculate base commission (support both new and legacy models)
     const assignment = assignments[0];
-    let baseCommission: number;
+    let baseCommission: number = 0;
     let percentage: number | null = null;
     let fixedFee: number | null = null;
-    let type: "FIXED" | "PERCENTAGE" | "MIXED";
+    let type: "FIXED" | "PERCENTAGE" | "MIXED" = "FIXED";
 
     if (assignment.basePercentageValue !== undefined || assignment.baseFixedValue !== undefined) {
       // New model: direct values
-      const percentageComm = (assignment.basePercentageValue || 0) * simulation.amount;
-      const fixedComm = assignment.baseFixedValue || 0;
-      baseCommission = percentageComm + fixedComm;
-      percentage = assignment.basePercentageValue ?? null;
-      fixedFee = assignment.baseFixedValue ?? null;
+      // First check if there's a matching commission range for this amount
+      let rangeFound = false;
 
-      if (assignment.basePercentageValue && assignment.baseFixedValue) {
-        type = "MIXED";
-      } else if (assignment.basePercentageValue) {
-        type = "PERCENTAGE";
-      } else {
-        type = "FIXED";
+      if (assignment.commissionRanges && assignment.commissionRanges.length > 0) {
+        const now = new Date();
+        const matchingRange = assignment.commissionRanges.find(range => {
+          const isInRange = simulation.amount >= range.minAmount && simulation.amount <= range.maxAmount;
+          const isActive = new Date(range.startDate) <= now && new Date(range.endDate) >= now;
+          return isInRange && isActive;
+        });
+
+        if (matchingRange) {
+          rangeFound = true;
+          const percentageComm = (matchingRange.percentageValue || 0) * simulation.amount;
+          const fixedComm = matchingRange.fixedValue || 0;
+          baseCommission = percentageComm + fixedComm;
+          percentage = matchingRange.percentageValue ?? null;
+          fixedFee = matchingRange.fixedValue ?? null;
+
+          if (matchingRange.percentageValue && matchingRange.fixedValue) {
+            type = "MIXED";
+          } else if (matchingRange.percentageValue) {
+            type = "PERCENTAGE";
+          } else {
+            type = "FIXED";
+          }
+        }
+      }
+
+      // If no range found, use base values
+      if (!rangeFound) {
+        const percentageComm = (assignment.basePercentageValue || 0) * simulation.amount;
+        const fixedComm = assignment.baseFixedValue || 0;
+        baseCommission = percentageComm + fixedComm;
+        percentage = assignment.basePercentageValue ?? null;
+        fixedFee = assignment.baseFixedValue ?? null;
+
+        if (assignment.basePercentageValue && assignment.baseFixedValue) {
+          type = "MIXED";
+        } else if (assignment.basePercentageValue) {
+          type = "PERCENTAGE";
+        } else {
+          type = "FIXED";
+        }
       }
     } else {
       // Legacy model: template-based

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { merchantSchema, MerchantFormData } from "@/lib/validations/merchant.schema";
@@ -9,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMerchantsStore } from "@/lib/stores/merchants.store";
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
+import { Eye, EyeOff, RefreshCw } from "lucide-react";
 
 const COUNTRIES = [
   { code: "CL", name: "Chile" },
@@ -21,6 +24,8 @@ const COUNTRIES = [
 export function MerchantForm() {
   const router = useRouter();
   const { createMerchant } = useMerchantsStore();
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [showSecretKey, setShowSecretKey] = useState(false);
 
   const {
     register,
@@ -42,6 +47,16 @@ export function MerchantForm() {
   });
 
   const countries = watch("countries") || [];
+
+  const generateApiKey = () => {
+    const uuid = uuidv4();
+    setValue("callbackApiKeyRef", uuid);
+  };
+
+  const generateSecretKey = () => {
+    const uuid = uuidv4();
+    setValue("callbackSecretKeyRef", uuid);
+  };
 
   const toggleCountry = (countryCode: string) => {
     const newCountries = countries.includes(countryCode)
@@ -177,21 +192,72 @@ export function MerchantForm() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="callbackApiKeyRef">API Key Reference</Label>
-              <Input
-                id="callbackApiKeyRef"
-                {...register("callbackApiKeyRef")}
-                placeholder="api-key-ref"
-              />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="callbackApiKeyRef"
+                    {...register("callbackApiKeyRef")}
+                    placeholder="Generar UUID automático"
+                    type={showApiKey ? "text" : "password"}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showApiKey ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={generateApiKey}
+                  title="Generar UUID"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="callbackSecretKeyRef">Secret Key Reference</Label>
-              <Input
-                id="callbackSecretKeyRef"
-                {...register("callbackSecretKeyRef")}
-                placeholder="secret-key-ref"
-                type="password"
-              />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="callbackSecretKeyRef"
+                    {...register("callbackSecretKeyRef")}
+                    placeholder="Generar UUID automático"
+                    type={showSecretKey ? "text" : "password"}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSecretKey(!showSecretKey)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showSecretKey ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={generateSecretKey}
+                  title="Generar UUID"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>

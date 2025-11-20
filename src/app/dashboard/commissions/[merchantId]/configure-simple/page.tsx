@@ -14,16 +14,23 @@ import { ArrowLeft, Building2, MapPin, CreditCard, Save, Plus, X } from "lucide-
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { commissionAssignmentSchema } from "@/lib/validations/commission.schema";
 import { v4 as uuidv4 } from "uuid";
 
-// Simplified form schema (without ranges for now, we'll add them later)
+// Form schema with commission ranges
 const configureSimpleCommissionSchema = z.object({
   countryCode: z.string().length(2, "Código de país inválido"),
   channelCode: z.string().min(1, "Debe seleccionar un canal"),
   basePercentageValue: z.string().optional(),
   baseFixedValue: z.string().optional(),
   assignedBy: z.string().email("Debe ser un email válido"),
+  commissionRanges: z.array(z.object({
+    minAmount: z.string().min(1, "Monto mínimo requerido"),
+    maxAmount: z.string().min(1, "Monto máximo requerido"),
+    percentageValue: z.string().optional(),
+    fixedValue: z.string().optional(),
+    startDate: z.string().min(1, "Fecha de inicio requerida"),
+    endDate: z.string().min(1, "Fecha de fin requerida"),
+  })).optional(),
 }).refine(
   (data) => data.basePercentageValue || data.baseFixedValue,
   {
@@ -61,6 +68,7 @@ export default function ConfigureSimpleCommissionPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
     watch,
   } = useForm<ConfigureSimpleCommissionFormData>({
@@ -69,7 +77,13 @@ export default function ConfigureSimpleCommissionPage() {
       countryCode: preSelectedCountry || "",
       channelCode: preSelectedChannel || "",
       assignedBy: "admin@zippy.com",
+      commissionRanges: [],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "commissionRanges",
   });
 
   const selectedCountry = watch("countryCode");
@@ -116,6 +130,21 @@ export default function ConfigureSimpleCommissionPage() {
 
   const onSubmit = async (data: ConfigureSimpleCommissionFormData) => {
     try {
+      // Process commission ranges
+      const processedRanges = data.commissionRanges?.map(range => ({
+        id: uuidv4(),
+        minAmount: parseFloat(range.minAmount),
+        maxAmount: parseFloat(range.maxAmount),
+        percentageValue: range.percentageValue
+          ? parseFloat(range.percentageValue) / 100
+          : null,
+        fixedValue: range.fixedValue
+          ? parseFloat(range.fixedValue)
+          : null,
+        startDate: new Date(range.startDate).toISOString(),
+        endDate: new Date(range.endDate).toISOString(),
+      })) || [];
+
       await createAssignment({
         merchantId,
         countryCode: data.countryCode,
@@ -126,7 +155,7 @@ export default function ConfigureSimpleCommissionPage() {
         baseFixedValue: data.baseFixedValue
           ? parseFloat(data.baseFixedValue)
           : null,
-        commissionRanges: [],
+        commissionRanges: processedRanges,
         status: "ACTIVE",
         assignedBy: data.assignedBy,
       });
@@ -254,7 +283,7 @@ export default function ConfigureSimpleCommissionPage() {
           </CardContent>
         </Card>
 
-        {/* Commission Values */}
+        {/* Base Commission Values */}
         <Card>
           <CardHeader>
             <CardTitle>Comisión Base (Permanente)</CardTitle>
@@ -308,6 +337,169 @@ export default function ConfigureSimpleCommissionPage() {
                 Si configura ambos, se aplicarán las dos comisiones.
               </p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Commission Ranges */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Comisiones por Rango de Monto (Opcional)</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Estas comisiones especiales pisan la comisión base cuando el monto de la transacción
+                  cae dentro del rango y está dentro de las fechas de vigencia
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append({
+                  minAmount: "",
+                  maxAmount: "",
+                  percentageValue: "",
+                  fixedValue: "",
+                  startDate: "",
+                  endDate: "",
+                })}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar Rango
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {fields.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-8">
+                No hay rangos de comisión configurados. Haga clic en "Agregar Rango" para crear uno.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="rounded-lg border p-4 space-y-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">Rango {index + 1}</h4>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor={`commissionRanges.${index}.minAmount`}>
+                          Monto Mínimo *
+                        </Label>
+                        <Input
+                          id={`commissionRanges.${index}.minAmount`}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Ej: 1000"
+                          {...register(`commissionRanges.${index}.minAmount`)}
+                        />
+                        {errors.commissionRanges?.[index]?.minAmount && (
+                          <p className="text-sm text-red-500">
+                            {errors.commissionRanges[index]?.minAmount?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`commissionRanges.${index}.maxAmount`}>
+                          Monto Máximo *
+                        </Label>
+                        <Input
+                          id={`commissionRanges.${index}.maxAmount`}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Ej: 5000"
+                          {...register(`commissionRanges.${index}.maxAmount`)}
+                        />
+                        {errors.commissionRanges?.[index]?.maxAmount && (
+                          <p className="text-sm text-red-500">
+                            {errors.commissionRanges[index]?.maxAmount?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`commissionRanges.${index}.percentageValue`}>
+                          Comisión Porcentual (%)
+                        </Label>
+                        <Input
+                          id={`commissionRanges.${index}.percentageValue`}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          placeholder="Ej: 2.5"
+                          {...register(`commissionRanges.${index}.percentageValue`)}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`commissionRanges.${index}.fixedValue`}>
+                          Comisión Fija
+                        </Label>
+                        <Input
+                          id={`commissionRanges.${index}.fixedValue`}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Ej: 300"
+                          {...register(`commissionRanges.${index}.fixedValue`)}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`commissionRanges.${index}.startDate`}>
+                          Fecha de Inicio *
+                        </Label>
+                        <Input
+                          id={`commissionRanges.${index}.startDate`}
+                          type="datetime-local"
+                          {...register(`commissionRanges.${index}.startDate`)}
+                        />
+                        {errors.commissionRanges?.[index]?.startDate && (
+                          <p className="text-sm text-red-500">
+                            {errors.commissionRanges[index]?.startDate?.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor={`commissionRanges.${index}.endDate`}>
+                          Fecha de Fin *
+                        </Label>
+                        <Input
+                          id={`commissionRanges.${index}.endDate`}
+                          type="datetime-local"
+                          {...register(`commissionRanges.${index}.endDate`)}
+                        />
+                        {errors.commissionRanges?.[index]?.endDate && (
+                          <p className="text-sm text-red-500">
+                            {errors.commissionRanges[index]?.endDate?.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-md border border-amber-200 bg-amber-50 p-2">
+                      <p className="text-xs text-amber-900">
+                        Al menos uno de los valores de comisión (porcentaje o fijo) debe ser especificado
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useCommissionsStore } from "@/lib/stores/commissions.store";
 import { useMerchantsStore } from "@/lib/stores/merchants.store";
 import { useChannelsStore } from "@/lib/stores/channels.store";
+import { useMerchantChannelConfigStore } from "@/lib/stores/merchant-channel-config.store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,8 @@ export default function ConfigureCommissionPage() {
   } = useCommissionsStore();
   const { merchants, fetchMerchants } = useMerchantsStore();
   const { channels, fetchChannels } = useChannelsStore();
+  const { configs, fetchConfigs, getConfigsByMerchant } =
+    useMerchantChannelConfigStore();
 
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
 
@@ -53,7 +56,8 @@ export default function ConfigureCommissionPage() {
     fetchChannels();
     fetchTemplates();
     fetchParameters();
-  }, [fetchMerchants, fetchChannels, fetchTemplates, fetchParameters]);
+    fetchConfigs();
+  }, [fetchMerchants, fetchChannels, fetchTemplates, fetchParameters, fetchConfigs]);
 
   const merchant = merchants.find((m) => m.id === merchantId);
 
@@ -75,6 +79,30 @@ export default function ConfigureCommissionPage() {
 
   const selectedCountry = watch("countryCode");
   const selectedChannel = watch("channelCode");
+
+  // Get merchant's configured channels
+  const merchantConfigs = getConfigsByMerchant(merchantId);
+
+  // Filter channels based on merchant config and selected country
+  const getAvailableChannels = () => {
+    if (!selectedCountry) {
+      // If no country selected, show all merchant's configured channels
+      const configuredChannelIds = merchantConfigs
+        .filter((c) => c.isActive)
+        .map((c) => c.channelId);
+      return channels.filter((ch) => configuredChannelIds.includes(ch.id));
+    }
+
+    // Filter by country and active status
+    const configsForCountry = merchantConfigs.filter(
+      (c) => c.countryCode === selectedCountry && c.isActive
+    );
+
+    const channelIds = configsForCountry.map((c) => c.channelId);
+    return channels.filter((ch) => channelIds.includes(ch.id));
+  };
+
+  const availableChannels = getAvailableChannels();
 
   useEffect(() => {
     if (watch("templateId")) {
@@ -193,19 +221,30 @@ export default function ConfigureCommissionPage() {
                 <select
                   id="channelCode"
                   {...register("channelCode")}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  disabled={!selectedCountry}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                 >
-                  <option value="">Seleccionar canal</option>
-                  {channels
-                    .filter((c) => c.isActive)
-                    .map((channel) => (
-                      <option key={channel.code} value={channel.code}>
-                        {channel.name}
-                      </option>
-                    ))}
+                  <option value="">
+                    {!selectedCountry
+                      ? "Primero seleccione un país"
+                      : availableChannels.length === 0
+                      ? "No hay canales configurados para este país"
+                      : "Seleccionar canal"}
+                  </option>
+                  {availableChannels.map((channel) => (
+                    <option key={channel.code} value={channel.code}>
+                      {channel.name}
+                    </option>
+                  ))}
                 </select>
                 {errors.channelCode && (
                   <p className="text-sm text-red-500">{errors.channelCode.message}</p>
+                )}
+                {selectedCountry && availableChannels.length === 0 && (
+                  <p className="text-sm text-amber-600">
+                    Este merchant no tiene canales configurados para {selectedCountry}.
+                    Configure canales en la página del merchant.
+                  </p>
                 )}
               </div>
 

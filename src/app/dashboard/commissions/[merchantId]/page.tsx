@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCommissionsStore } from "@/lib/stores/commissions.store";
 import { useMerchantsStore } from "@/lib/stores/merchants.store";
 import { useChannelsStore } from "@/lib/stores/channels.store";
+import { useMerchantChannelConfigStore } from "@/lib/stores/merchant-channel-config.store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -62,6 +63,7 @@ export default function MerchantCommissionsPage() {
   } = useCommissionsStore();
   const { merchants, fetchMerchants } = useMerchantsStore();
   const { channels, fetchChannels } = useChannelsStore();
+  const { fetchConfigs, getConfigsByMerchant } = useMerchantChannelConfigStore();
 
   const [filterStatus, setFilterStatus] = useState<"all" | "configured" | "unconfigured">(
     "all"
@@ -78,6 +80,7 @@ export default function MerchantCommissionsPage() {
     fetchParameters();
     fetchPSPCommissions();
     fetchTaxConfigs();
+    fetchConfigs();
   }, [
     fetchMerchants,
     fetchChannels,
@@ -86,6 +89,7 @@ export default function MerchantCommissionsPage() {
     fetchParameters,
     fetchPSPCommissions,
     fetchTaxConfigs,
+    fetchConfigs,
   ]);
 
   const merchant = merchants.find((m) => m.id === merchantId);
@@ -141,11 +145,17 @@ export default function MerchantCommissionsPage() {
   // Generate all possible configurations
   const generateConfigurationRows = (): ConfigurationRow[] => {
     const rows: ConfigurationRow[] = [];
+    const merchantConfigs = getConfigsByMerchant(merchantId);
 
     merchant.countries.forEach((countryCode) => {
-      channels
-        .filter((c) => c.isActive)
-        .forEach((channel) => {
+      // Only show channels configured for this merchant and country
+      const configsForCountry = merchantConfigs.filter(
+        (c) => c.countryCode === countryCode
+      );
+
+      configsForCountry.forEach((config) => {
+        const channel = channels.find((ch) => ch.id === config.channelId);
+        if (!channel) return;
           const assignment = assignments.find(
             (a) =>
               a.merchantId === merchantId &&
@@ -188,24 +198,24 @@ export default function MerchantCommissionsPage() {
             }
           }
 
-          rows.push({
-            countryCode,
-            channelCode: channel.code,
-            channelName: channel.name,
-            isConfigured: !!assignment,
-            assignmentId: assignment?.id,
-            templateId: assignment?.commissionTemplateId,
-            templateName: template?.name,
-            templateType: template?.type,
-            commissionValue: assignment
-              ? renderCommissionValue(assignment.commissionTemplateId)
-              : undefined,
-            pspName: pspCommission?.pspName,
-            pspCommissionValue,
-            taxesCount: taxes.length,
-            status: assignment?.status,
-          });
+        rows.push({
+          countryCode,
+          channelCode: channel.code,
+          channelName: channel.name,
+          isConfigured: !!assignment,
+          assignmentId: assignment?.id,
+          templateId: assignment?.commissionTemplateId,
+          templateName: template?.name,
+          templateType: template?.type,
+          commissionValue: assignment
+            ? renderCommissionValue(assignment.commissionTemplateId)
+            : undefined,
+          pspName: pspCommission?.pspName,
+          pspCommissionValue,
+          taxesCount: taxes.length,
+          status: config.isActive ? assignment?.status : "INACTIVE",
         });
+      });
     });
 
     return rows;

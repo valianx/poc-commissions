@@ -46,10 +46,7 @@ export function Sidebar() {
   return (
     <div className="flex h-full w-64 flex-col bg-gray-900">
       <div className="flex h-16 items-center justify-center border-b border-gray-800">
-        <h1 className="text-xl font-bold text-white">Zippy POC</h1>
-        <span className="ml-2 rounded bg-yellow-500 px-2 py-0.5 text-xs font-semibold text-gray-900">
-          PROTOTYPE
-        </span>
+        <h1 className="text-xl font-bold text-white">Dashboard PROTOTYPE</h1>
       </div>
       <nav className="flex-1 space-y-1 px-2 py-4">
         {navigation.map((item) => {

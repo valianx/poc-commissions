@@ -21,8 +21,8 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <title>Zippy POC - Commission Management Prototype</title>
-        <meta name="description" content="Proof of concept for commission management system" />
+        <title>Dashboard PROTOTYPE - Commission Management</title>
+        <meta name="description" content="Prototype for commission management system" />
       </head>
       <body className={inter.className}>{children}</body>
     </html>

@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { use } from "react";
 import { useMerchantsStore } from "@/lib/stores/merchants.store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Edit } from "lucide-react";
 import Link from "next/link";
 import { formatDateTime } from "@/lib/utils";
-import { MerchantEditForm } from "@/components/merchants/merchant-edit-form";
 import { MerchantChannelConfig } from "@/components/merchants/merchant-channel-config";
+import { useRouter } from "next/navigation";
 
 export default function MerchantDetailPage({
   params,
@@ -18,8 +18,8 @@ export default function MerchantDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const router = useRouter();
   const { getMerchantById, fetchMerchants } = useMerchantsStore();
-  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchMerchants();
@@ -36,36 +36,18 @@ export default function MerchantDetailPage({
             Volver
           </Button>
         </Link>
-        <Card>
-          <CardContent className="py-10 text-center">
-            <p className="text-muted-foreground">Merchant no encontrado</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Show edit form if in edit mode
-  if (isEditing) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/merchants">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="h-4 w-4" />
+        <div className="flex min-h-[400px] items-center justify-center">
+          <div className="text-center">
+            <p className="text-lg text-muted-foreground">Merchant no encontrado</p>
+            <Button
+              variant="outline"
+              className="mt-4"
+              onClick={() => router.push("/dashboard/merchants")}
+            >
+              Volver a Merchants
             </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold">Editar Merchant</h1>
-            <p className="text-muted-foreground">
-              {merchant.name} ({merchant.code})
-            </p>
           </div>
         </div>
-        <MerchantEditForm
-          merchant={merchant}
-          onCancel={() => setIsEditing(false)}
-        />
       </div>
     );
   }
@@ -88,11 +70,9 @@ export default function MerchantDetailPage({
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditing(true)}
+            onClick={() => router.push(`/dashboard/merchants/${id}/edit`)}
           >
-            <Pencil className="mr-2 h-4 w-4" />
+            <Edit className="mr-2 h-4 w-4" />
             Editar
           </Button>
           <Badge variant={merchant.isActive ? "success" : "destructive"}>

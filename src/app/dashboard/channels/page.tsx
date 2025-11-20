@@ -117,12 +117,7 @@ export default function ChannelsPage() {
                     channels.map((channel) => (
                       <TableRow key={channel.id}>
                         <TableCell className="font-medium">
-                          <Link
-                            href={`/dashboard/channels/${channel.id}`}
-                            className="text-primary hover:underline"
-                          >
-                            {channel.name}
-                          </Link>
+                          {channel.name}
                         </TableCell>
                         <TableCell>
                           <code className="rounded bg-gray-100 px-2 py-1 text-sm">
@@ -140,15 +135,32 @@ export default function ChannelsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              handleDeleteChannel(channel.id, channel.name)
-                            }
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => router.push(`/dashboard/channels/${channel.id}/view`)}
+                              title="Ver detalles"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => router.push(`/dashboard/channels/${channel.id}`)}
+                              title="Editar"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteChannel(channel.id, channel.name)}
+                              title="Eliminar"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))

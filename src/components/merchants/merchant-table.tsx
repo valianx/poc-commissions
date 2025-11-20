@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, Edit, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useMerchantsStore } from "@/lib/stores/merchants.store";
 
@@ -83,14 +83,20 @@ export function MerchantTable({ merchants }: MerchantTableProps) {
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Link href={`/dashboard/merchants/${merchant.id}`}>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" title="Ver detalles">
                         <Eye className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Link href={`/dashboard/merchants/${merchant.id}/edit`}>
+                      <Button variant="ghost" size="icon" title="Editar">
+                        <Edit className="h-4 w-4" />
                       </Button>
                     </Link>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(merchant.id, merchant.name)}
+                      title="Eliminar"
                     >
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>

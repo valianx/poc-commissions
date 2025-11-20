@@ -67,13 +67,13 @@ export default function ChannelDetailPage({
     // Ensure pspAssignments exists
     const currentAssignments = channel.pspAssignments || [];
 
-    // Check if assignment already exists
+    // Check if this specific PSP is already assigned to this country
     const exists = currentAssignments.some(
-      (a) => a.countryCode === selectedCountry
+      (a) => a.countryCode === selectedCountry && a.pspId === selectedPSP
     );
 
     if (exists) {
-      alert("Ya existe una asignación para este país");
+      alert("Este PSP ya está asignado a este país");
       return;
     }
 
@@ -92,10 +92,10 @@ export default function ChannelDetailPage({
     setIsAddingAssignment(false);
   };
 
-  const handleToggleAssignment = (countryCode: string) => {
+  const handleToggleAssignment = (countryCode: string, pspId: string) => {
     const currentAssignments = channel.pspAssignments || [];
     const updatedAssignments = currentAssignments.map((assignment) =>
-      assignment.countryCode === countryCode
+      assignment.countryCode === countryCode && assignment.pspId === pspId
         ? { ...assignment, isActive: !assignment.isActive }
         : assignment
     );
@@ -105,17 +105,18 @@ export default function ChannelDetailPage({
     });
   };
 
-  const handleRemoveAssignment = (countryCode: string) => {
+  const handleRemoveAssignment = (countryCode: string, pspId: string) => {
+    const pspName = getPSPName(pspId);
+    const countryName = getCountryName(countryCode);
+
     if (
       confirm(
-        `¿Está seguro de eliminar la asignación de PSP para ${
-          COUNTRIES.find((c) => c.code === countryCode)?.name
-        }?`
+        `¿Está seguro de eliminar la asignación de ${pspName} para ${countryName}?`
       )
     ) {
       const currentAssignments = channel.pspAssignments || [];
       const updatedAssignments = currentAssignments.filter(
-        (a) => a.countryCode !== countryCode
+        (a) => !(a.countryCode === countryCode && a.pspId === pspId)
       );
 
       updateChannel(channel.id, {
@@ -278,7 +279,7 @@ export default function ChannelDetailPage({
             <div className="space-y-3">
               {channel.pspAssignments.map((assignment) => (
                 <div
-                  key={assignment.countryCode}
+                  key={`${assignment.countryCode}-${assignment.pspId}`}
                   className="flex items-center justify-between rounded-lg border p-4"
                 >
                   <div className="flex items-center gap-4">
@@ -301,7 +302,7 @@ export default function ChannelDetailPage({
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        handleToggleAssignment(assignment.countryCode)
+                        handleToggleAssignment(assignment.countryCode, assignment.pspId)
                       }
                     >
                       {assignment.isActive ? "Desactivar" : "Activar"}
@@ -310,7 +311,7 @@ export default function ChannelDetailPage({
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        handleRemoveAssignment(assignment.countryCode)
+                        handleRemoveAssignment(assignment.countryCode, assignment.pspId)
                       }
                       className="text-red-500 hover:text-red-700"
                     >

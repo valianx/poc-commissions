@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { merchantSchema, MerchantFormData } from "@/lib/validations/merchant.schema";
@@ -47,6 +47,38 @@ export function MerchantForm() {
   });
 
   const countries = watch("countries") || [];
+  const merchantName = watch("name") || "";
+
+  // Auto-generate code based on merchant name
+  const generateCode = (name: string) => {
+    if (!name) return "";
+
+    // Convert to uppercase, replace spaces with underscores, remove special characters
+    const cleanName = name
+      .toUpperCase()
+      .replace(/\s+/g, "_")
+      .replace(/[^A-Z0-9_]/g, "");
+
+    // Get current date in YYYYMMDD format
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const dateStr = `${year}${month}${day}`;
+
+    return `${cleanName}_${dateStr}`;
+  };
+
+  // Watch name changes and update code automatically
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === "name" && value.name) {
+        const generatedCode = generateCode(value.name);
+        setValue("code", generatedCode);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, setValue]);
 
   const generateApiKey = () => {
     const uuid = uuidv4();
@@ -95,11 +127,13 @@ export function MerchantForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="code">Código Único</Label>
+              <Label htmlFor="code">Código Único (Auto-generado)</Label>
               <Input
                 id="code"
                 {...register("code")}
-                placeholder="Ej: 1XBET_001"
+                placeholder="Se genera automáticamente"
+                readOnly
+                className="bg-gray-50"
               />
               {errors.code && (
                 <p className="text-sm text-red-500">{errors.code.message}</p>

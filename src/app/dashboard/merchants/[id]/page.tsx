@@ -10,6 +10,7 @@ import { ArrowLeft, Pencil } from "lucide-react";
 import Link from "next/link";
 import { formatDateTime } from "@/lib/utils";
 import { MerchantEditForm } from "@/components/merchants/merchant-edit-form";
+import { MerchantChannelConfig } from "@/components/merchants/merchant-channel-config";
 
 export default function MerchantDetailPage({
   params,
@@ -178,8 +179,12 @@ export default function MerchantDetailPage({
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        <Card className="md:col-span-2">
+      <MerchantChannelConfig merchant={merchant} />
+
+      <div className="grid gap-6 md:grid-cols-1">
+        <Card>
           <CardHeader>
             <CardTitle>Metadatos</CardTitle>
           </CardHeader>

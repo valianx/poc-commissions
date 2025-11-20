@@ -1,0 +1,285 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { useMerchantChannelConfigStore } from "@/lib/stores/merchant-channel-config.store";
+import { useChannelsStore } from "@/lib/stores/channels.store";
+import { Merchant } from "@/types/merchant";
+
+const COUNTRIES = [
+  { code: "CL", name: "Chile" },
+  { code: "BR", name: "Brasil" },
+  { code: "PE", name: "Perú" },
+  { code: "CO", name: "Colombia" },
+  { code: "MX", name: "México" },
+  { code: "AR", name: "Argentina" },
+];
+
+interface MerchantChannelConfigProps {
+  merchant: Merchant;
+}
+
+export function MerchantChannelConfig({
+  merchant,
+}: MerchantChannelConfigProps) {
+  const {
+    configs,
+    fetchConfigs,
+    getConfigsByMerchant,
+    createConfig,
+    updateConfig,
+    deleteConfig,
+  } = useMerchantChannelConfigStore();
+
+  const { channels, psps, fetchChannels, fetchPSPs } = useChannelsStore();
+
+  const [isAdding, setIsAdding] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedChannel, setSelectedChannel] = useState("");
+  const [selectedPSP, setSelectedPSP] = useState("");
+
+  useEffect(() => {
+    fetchConfigs();
+    fetchChannels();
+    fetchPSPs();
+  }, [fetchConfigs, fetchChannels, fetchPSPs]);
+
+  const merchantConfigs = getConfigsByMerchant(merchant.id);
+
+  // Get available PSPs for selected country and channel
+  const getAvailablePSPs = () => {
+    if (!selectedCountry || !selectedChannel) return [];
+
+    const channel = channels.find((c) => c.id === selectedChannel);
+    if (!channel || !channel.pspAssignments) return [];
+
+    // Get PSPs assigned to this channel for the selected country
+    const channelPSPAssignments = channel.pspAssignments.filter(
+      (a) => a.countryCode === selectedCountry && a.isActive
+    );
+
+    // Return the actual PSP objects
+    return channelPSPAssignments
+      .map((assignment) => psps.find((p) => p.id === assignment.pspId))
+      .filter((psp) => psp !== undefined);
+  };
+
+  const handleAddConfig = () => {
+    if (!selectedCountry || !selectedChannel || !selectedPSP) {
+      alert("Debe seleccionar país, canal y PSP");
+      return;
+    }
+
+    // Check if configuration already exists
+    const exists = merchantConfigs.some(
+      (c) =>
+        c.countryCode === selectedCountry && c.channelId === selectedChannel
+    );
+
+    if (exists) {
+      alert("Ya existe una configuración para este país y canal");
+      return;
+    }
+
+    createConfig({
+      merchantId: merchant.id,
+      countryCode: selectedCountry,
+      channelId: selectedChannel,
+      pspId: selectedPSP,
+      isActive: true,
+    });
+
+    setSelectedCountry("");
+    setSelectedChannel("");
+    setSelectedPSP("");
+    setIsAdding(false);
+  };
+
+  const handleToggleConfig = (configId: string) => {
+    const config = configs.find((c) => c.id === configId);
+    if (config) {
+      updateConfig(configId, { isActive: !config.isActive });
+    }
+  };
+
+  const handleDeleteConfig = (configId: string) => {
+    const config = configs.find((c) => c.id === configId);
+    if (config && confirm("¿Está seguro de eliminar esta configuración?")) {
+      deleteConfig(configId);
+    }
+  };
+
+  const getCountryName = (code: string) => {
+    return COUNTRIES.find((c) => c.code === code)?.name || code;
+  };
+
+  const getChannelName = (channelId: string) => {
+    return channels.find((c) => c.id === channelId)?.name || "Canal no encontrado";
+  };
+
+  const getPSPName = (pspId: string) => {
+    return psps.find((p) => p.id === pspId)?.name || "PSP no encontrado";
+  };
+
+  const availablePSPs = getAvailablePSPs();
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle>Configuración de Canales</CardTitle>
+          <Button size="sm" onClick={() => setIsAdding(!isAdding)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar Canal
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isAdding && (
+          <Card className="bg-gray-50">
+            <CardContent className="pt-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">País</label>
+                  <select
+                    value={selectedCountry}
+                    onChange={(e) => {
+                      setSelectedCountry(e.target.value);
+                      setSelectedChannel("");
+                      setSelectedPSP("");
+                    }}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">Seleccionar país</option>
+                    {merchant.countries.map((countryCode) => {
+                      const country = COUNTRIES.find((c) => c.code === countryCode);
+                      return (
+                        <option key={countryCode} value={countryCode}>
+                          {country?.name || countryCode}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Canal</label>
+                  <select
+                    value={selectedChannel}
+                    onChange={(e) => {
+                      setSelectedChannel(e.target.value);
+                      setSelectedPSP("");
+                    }}
+                    disabled={!selectedCountry}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                  >
+                    <option value="">Seleccionar canal</option>
+                    {channels
+                      .filter((ch) => ch.isActive)
+                      .filter((ch) => {
+                        // Only show channels that have PSP assignments for the selected country
+                        const assignments = ch.pspAssignments || [];
+                        return assignments.some(
+                          (a) => a.countryCode === selectedCountry && a.isActive
+                        );
+                      })
+                      .map((channel) => (
+                        <option key={channel.id} value={channel.id}>
+                          {channel.name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">PSP</label>
+                  <select
+                    value={selectedPSP}
+                    onChange={(e) => setSelectedPSP(e.target.value)}
+                    disabled={!selectedChannel}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                  >
+                    <option value="">Seleccionar PSP</option>
+                    {availablePSPs.map((psp) => (
+                      <option key={psp.id} value={psp.id}>
+                        {psp.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsAdding(false);
+                    setSelectedCountry("");
+                    setSelectedChannel("");
+                    setSelectedPSP("");
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button size="sm" onClick={handleAddConfig}>
+                  Guardar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {merchantConfigs.length === 0 ? (
+          <div className="py-10 text-center text-muted-foreground">
+            No hay canales configurados. Haz clic en "Agregar Canal" para comenzar.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {merchantConfigs.map((config) => (
+              <div
+                key={config.id}
+                className="flex items-center justify-between rounded-lg border p-4"
+              >
+                <div className="flex items-center gap-4">
+                  <div>
+                    <p className="font-medium">
+                      {getCountryName(config.countryCode)} -{" "}
+                      {getChannelName(config.channelId)}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      PSP: {getPSPName(config.pspId)}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={config.isActive ? "success" : "secondary"}>
+                    {config.isActive ? "Activo" : "Inactivo"}
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleToggleConfig(config.id)}
+                  >
+                    {config.isActive ? "Desactivar" : "Activar"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteConfig(config.id)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Eliminar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

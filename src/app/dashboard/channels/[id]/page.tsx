@@ -64,8 +64,11 @@ export default function ChannelDetailPage({
       return;
     }
 
+    // Ensure pspAssignments exists
+    const currentAssignments = channel.pspAssignments || [];
+
     // Check if assignment already exists
-    const exists = channel.pspAssignments.some(
+    const exists = currentAssignments.some(
       (a) => a.countryCode === selectedCountry
     );
 
@@ -81,7 +84,7 @@ export default function ChannelDetailPage({
     };
 
     updateChannel(channel.id, {
-      pspAssignments: [...channel.pspAssignments, newAssignment],
+      pspAssignments: [...currentAssignments, newAssignment],
     });
 
     setSelectedCountry("");
@@ -90,7 +93,8 @@ export default function ChannelDetailPage({
   };
 
   const handleToggleAssignment = (countryCode: string) => {
-    const updatedAssignments = channel.pspAssignments.map((assignment) =>
+    const currentAssignments = channel.pspAssignments || [];
+    const updatedAssignments = currentAssignments.map((assignment) =>
       assignment.countryCode === countryCode
         ? { ...assignment, isActive: !assignment.isActive }
         : assignment
@@ -109,7 +113,8 @@ export default function ChannelDetailPage({
         }?`
       )
     ) {
-      const updatedAssignments = channel.pspAssignments.filter(
+      const currentAssignments = channel.pspAssignments || [];
+      const updatedAssignments = currentAssignments.filter(
         (a) => a.countryCode !== countryCode
       );
 
@@ -265,7 +270,7 @@ export default function ChannelDetailPage({
             </Card>
           )}
 
-          {channel.pspAssignments.length === 0 ? (
+          {(!channel.pspAssignments || channel.pspAssignments.length === 0) ? (
             <div className="py-10 text-center text-muted-foreground">
               No hay PSPs asignados. Haz clic en "Asignar PSP" para comenzar.
             </div>

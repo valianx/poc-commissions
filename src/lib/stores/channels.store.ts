@@ -42,14 +42,23 @@ export const useChannelsStore = create<ChannelsState>()(
         set({ isLoading: true, error: null });
         try {
           const channels = channelsRepository.getAll();
-          set({ channels, isLoading: false });
+          // Migrate old channels without pspAssignments
+          const migratedChannels = channels.map((channel) => ({
+            ...channel,
+            pspAssignments: channel.pspAssignments || [],
+          }));
+          set({ channels: migratedChannels, isLoading: false });
         } catch (error) {
           set({ error: "Failed to fetch channels", isLoading: false });
         }
       },
 
       getChannelById: (id) => {
-        return get().channels.find((c) => c.id === id);
+        const channel = get().channels.find((c) => c.id === id);
+        if (channel && !channel.pspAssignments) {
+          return { ...channel, pspAssignments: [] };
+        }
+        return channel;
       },
 
       createChannel: (channelData) => {

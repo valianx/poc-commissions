@@ -433,6 +433,14 @@ export function seedDatabase() {
       countryCode: "CL",
       channelId: channels.find((c) => c.code === "webpay")!.id,
       pspId: psps[2].id, // Transbank
+      taxes: [
+        {
+          taxCode: "IVA",
+          taxName: "Impuesto al Valor Agregado",
+          rate: 0.19,
+          isActive: true,
+        },
+      ],
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -444,6 +452,20 @@ export function seedDatabase() {
       countryCode: "BR",
       channelId: channels.find((c) => c.code === "pix")!.id,
       pspId: psps[1].id, // MercadoPago
+      taxes: [
+        {
+          taxCode: "ICMS",
+          taxName: "Imposto sobre Circulação de Mercadorias e Serviços",
+          rate: 0.18,
+          isActive: true,
+        },
+        {
+          taxCode: "PIS",
+          taxName: "Programa de Integração Social",
+          rate: 0.0165,
+          isActive: true,
+        },
+      ],
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -456,6 +478,14 @@ export function seedDatabase() {
       countryCode: "CL",
       channelId: channels.find((c) => c.code === "credit_card")!.id,
       pspId: psps[0].id, // PayU
+      taxes: [
+        {
+          taxCode: "IVA",
+          taxName: "Impuesto al Valor Agregado",
+          rate: 0.19,
+          isActive: true,
+        },
+      ],
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

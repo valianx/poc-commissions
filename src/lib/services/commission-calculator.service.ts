@@ -7,6 +7,7 @@ import {
 } from "@/lib/repositories/commissions.repository";
 import { PaymentSimulation, SimulationResult } from "@/types/simulator";
 import { channelsRepository, pspsRepository } from "@/lib/repositories/channels.repository";
+import { merchantChannelConfigRepository } from "@/lib/repositories/merchant-channel-config.repository";
 
 export class CommissionCalculatorService {
   calculate(simulation: PaymentSimulation): SimulationResult {
@@ -97,34 +98,47 @@ export class CommissionCalculatorService {
       type = result.type;
     }
 
-    // 4. Obtener impuestos
-    const taxes = merchantTaxConfigsRepository.getActiveConfigs(
+    // 4. Obtener el canal para encontrar tanto el PSP asignado como los taxes
+    const channel = channelsRepository.getByCode(simulation.channelCode);
+    if (!channel) {
+      throw new Error("Canal no encontrado");
+    }
+
+    // 5. Obtener la configuración del merchant channel para este país y canal
+    const merchantChannelConfig = merchantChannelConfigRepository.findByMerchantCountryAndChannel(
       simulation.merchantId,
       simulation.countryCode,
-      simulation.channelCode
+      channel.id
     );
 
-    const taxesBreakdown = taxes.map((tax) => ({
-      taxCode: tax.taxCode,
-      taxName: tax.taxName,
-      rate: tax.rate,
-      amount: baseCommission * tax.rate,
-    }));
+    // 6. Obtener impuestos desde la configuración del merchant channel
+    let taxesBreakdown: Array<{
+      taxCode: string;
+      taxName: string;
+      rate: number;
+      amount: number;
+    }> = [];
+
+    if (merchantChannelConfig && merchantChannelConfig.taxes) {
+      taxesBreakdown = merchantChannelConfig.taxes
+        .filter((tax) => tax.isActive)
+        .map((tax) => ({
+          taxCode: tax.taxCode,
+          taxName: tax.taxName,
+          rate: tax.rate,
+          amount: baseCommission * tax.rate,
+        }));
+    }
 
     const totalTaxes = taxesBreakdown.reduce(
       (sum, tax) => sum + tax.amount,
       0
     );
 
-    // 5. Comisión total al merchant
+    // 7. Comisión total al merchant
     const totalMerchantCommission = baseCommission + totalTaxes;
 
-    // 6. Obtener comisión PSP
-    // Primero obtener el canal para encontrar el PSP asignado
-    const channel = channelsRepository.getByCode(simulation.channelCode);
-    if (!channel) {
-      throw new Error("Canal no encontrado");
-    }
+    // 8. Obtener comisión PSP
 
     // Buscar el PSP asignado para el país en este canal
     const pspAssignment = channel.pspAssignments?.find(
@@ -166,7 +180,7 @@ export class CommissionCalculatorService {
       pspFixedFee = pspCommissionConfig.fixedValue;
     }
 
-    // 7. Calcular resultado final
+    // 9. Calcular resultado final
     // Zippy cobra al merchant: su comisión + impuestos + comisión del PSP
     const totalChargedToMerchant = totalMerchantCommission + pspAmount;
 

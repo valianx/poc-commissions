@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { use } from "react";
 import { useMerchantsStore } from "@/lib/stores/merchants.store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import Link from "next/link";
 import { formatDateTime } from "@/lib/utils";
+import { MerchantEditForm } from "@/components/merchants/merchant-edit-form";
 
 export default function MerchantDetailPage({
   params,
@@ -17,6 +18,7 @@ export default function MerchantDetailPage({
 }) {
   const { id } = use(params);
   const { getMerchantById, fetchMerchants } = useMerchantsStore();
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     fetchMerchants();
@@ -42,6 +44,31 @@ export default function MerchantDetailPage({
     );
   }
 
+  // Show edit form if in edit mode
+  if (isEditing) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/merchants">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold">Editar Merchant</h1>
+            <p className="text-muted-foreground">
+              {merchant.name} ({merchant.code})
+            </p>
+          </div>
+        </div>
+        <MerchantEditForm
+          merchant={merchant}
+          onCancel={() => setIsEditing(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -58,9 +85,19 @@ export default function MerchantDetailPage({
             </p>
           </div>
         </div>
-        <Badge variant={merchant.isActive ? "success" : "destructive"}>
-          {merchant.isActive ? "Activo" : "Inactivo"}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditing(true)}
+          >
+            <Pencil className="mr-2 h-4 w-4" />
+            Editar
+          </Button>
+          <Badge variant={merchant.isActive ? "success" : "destructive"}>
+            {merchant.isActive ? "Activo" : "Inactivo"}
+          </Badge>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">

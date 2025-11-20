@@ -8,6 +8,7 @@ import {
   MerchantTaxConfig,
   PSPCommission,
 } from "@/types/commission";
+import { MerchantChannelConfig } from "@/types/merchant-channel-config";
 import { STORAGE_KEYS, StorageMetadata } from "@/types/storage";
 
 export function seedDatabase() {
@@ -110,7 +111,13 @@ export function seedDatabase() {
       name: "PIX",
       description: "Sistema de pagos instantáneos de Brasil",
       isActive: true,
-      pspAssignments: [],
+      pspAssignments: [
+        {
+          countryCode: "BR",
+          pspId: psps[1].id, // MercadoPago for Brasil
+          isActive: true,
+        },
+      ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,
@@ -124,7 +131,7 @@ export function seedDatabase() {
       pspAssignments: [
         {
           countryCode: "CL",
-          pspId: psps[2].id, // Transbank for Chile
+          pspId: psps[0].id, // PayU for Chile
           isActive: true,
         },
         {
@@ -381,6 +388,45 @@ export function seedDatabase() {
     },
   ];
 
+  // Create merchant channel configurations
+  const merchantChannelConfigs: MerchantChannelConfig[] = [
+    // 1XBET configurations
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id, // 1XBET
+      countryCode: "CL",
+      channelId: channels.find((c) => c.code === "webpay")!.id,
+      pspId: psps[2].id, // Transbank
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id, // 1XBET
+      countryCode: "BR",
+      channelId: channels.find((c) => c.code === "pix")!.id,
+      pspId: psps[1].id, // MercadoPago
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    // BetWarrior configurations
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id, // BetWarrior
+      countryCode: "CL",
+      channelId: channels.find((c) => c.code === "credit_card")!.id,
+      pspId: psps[0].id, // PayU
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+  ];
+
   // Save to localStorage
   localStorage.setItem(STORAGE_KEYS.MERCHANTS, JSON.stringify(merchants));
   localStorage.setItem(STORAGE_KEYS.CHANNELS, JSON.stringify(channels));
@@ -405,6 +451,10 @@ export function seedDatabase() {
     STORAGE_KEYS.PSP_COMMISSIONS,
     JSON.stringify(pspCommissions)
   );
+  localStorage.setItem(
+    STORAGE_KEYS.MERCHANT_CHANNEL_CONFIGS,
+    JSON.stringify(merchantChannelConfigs)
+  );
 
   // Save metadata
   const seedMetadata: StorageMetadata = {
@@ -419,6 +469,7 @@ export function seedDatabase() {
       commissionAssignments: assignments.length,
       merchantTaxConfigs: taxConfigs.length,
       pspCommissions: pspCommissions.length,
+      merchantChannelConfigs: merchantChannelConfigs.length,
     },
   };
 

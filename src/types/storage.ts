@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   COMMISSION_ASSIGNMENTS: "zippy:commission_assignments",
   MERCHANT_TAX_CONFIGS: "zippy:merchant_tax_configs",
   PSP_COMMISSIONS: "zippy:psp_commissions",
+  MERCHANT_CHANNEL_CONFIGS: "zippy:merchant_channel_configs",
   METADATA: "zippy:metadata",
 } as const;
 
@@ -22,5 +23,6 @@ export interface StorageMetadata {
     commissionAssignments: number;
     merchantTaxConfigs: number;
     pspCommissions: number;
+    merchantChannelConfigs: number;
   };
 }

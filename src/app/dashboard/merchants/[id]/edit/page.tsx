@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { MerchantEditForm } from "@/components/merchants/merchant-edit-form";
+import { MerchantChannelConfig } from "@/components/merchants/merchant-channel-config";
 import { useRouter } from "next/navigation";
 
 export default function EditMerchantPage({
@@ -68,6 +69,8 @@ export default function EditMerchantPage({
         merchant={merchant}
         onCancel={() => router.push(`/dashboard/merchants/${id}`)}
       />
+
+      <MerchantChannelConfig merchant={merchant} />
     </div>
   );
 }

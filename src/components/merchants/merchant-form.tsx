@@ -59,12 +59,11 @@ export function MerchantForm() {
       .replace(/\s+/g, "_")
       .replace(/[^A-Z0-9_]/g, "");
 
-    // Get current date in YYYYMMDD format
+    // Get current date in YYYYMM format
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const dateStr = `${year}${month}${day}`;
+    const dateStr = `${year}${month}`;
 
     return `${cleanName}_${dateStr}`;
   };

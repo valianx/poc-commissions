@@ -135,21 +135,20 @@ export class CommissionCalculatorService {
     }
 
     // 7. Calcular resultado final
-    // El merchant recibe el monto original menos las comisiones de Zippy y PSP
-    const merchantReceives = simulation.amount - totalMerchantCommission - pspAmount;
+    // Zippy cobra al merchant: su comisión + impuestos + comisión del PSP
+    const totalChargedToMerchant = totalMerchantCommission + pspAmount;
 
-    // Zippy cobra totalMerchantCommission (comisión base + impuestos)
-    const zippyRevenue = totalMerchantCommission;
+    // El merchant recibe el monto original menos todo lo que Zippy cobra
+    const merchantReceives = simulation.amount - totalChargedToMerchant;
 
-    // Zippy debe pagar la comisión del PSP (costo de Zippy)
+    // Zippy cobra en total (comisión Zippy + impuestos + comisión PSP)
+    const zippyRevenue = totalChargedToMerchant;
+
+    // Zippy paga al PSP (pass-through)
     const zippyCost = pspAmount;
 
-    // Ganancia neta de Zippy = Lo que cobra - Lo que paga al PSP
-    const zippyNetProfit = zippyRevenue - zippyCost;
-
-    // Margen de Zippy sobre su ingreso total
-    const zippyMargin =
-      zippyRevenue > 0 ? (zippyNetProfit / zippyRevenue) * 100 : 0;
+    // Ganancia neta de Zippy = Solo su comisión + impuestos (la comisión del PSP es pass-through)
+    const zippyNetProfit = totalMerchantCommission;
 
     return {
       transactionAmount: simulation.amount,
@@ -175,7 +174,6 @@ export class CommissionCalculatorService {
       zippyRevenue,
       zippyCost,
       zippyNetProfit,
-      zippyMargin,
     };
   }
 

@@ -307,51 +307,39 @@ export function PaymentSimulator() {
                     {formatCurrency(result.merchantReceives, result.currency)}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
-                    (Monto - Comisiones)
+                    (Monto - Total cobrado)
                   </p>
                 </div>
 
                 <div className="rounded-lg bg-blue-50 p-3">
-                  <p className="mb-1 text-xs text-gray-600">Zippy Cobra</p>
+                  <p className="mb-1 text-xs text-gray-600">Zippy Cobra Total</p>
                   <p className="font-mono text-base font-bold text-blue-700">
                     {formatCurrency(result.zippyRevenue, result.currency)}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
-                    (Comisión + Impuestos)
+                    (Comisión + Impuestos + PSP)
                   </p>
                 </div>
 
                 <div className="rounded-lg bg-purple-50 p-3">
-                  <p className="mb-1 text-xs text-gray-600">PSP Cobra</p>
+                  <p className="mb-1 text-xs text-gray-600">Zippy Paga a PSP</p>
                   <p className="font-mono text-base font-bold text-purple-700">
                     {formatCurrency(result.zippyCost, result.currency)}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
-                    (Del monto original)
+                    (Pass-through)
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg bg-emerald-50 p-3">
-                  <p className="mb-1 text-xs text-gray-600">Ganancia Neta Zippy</p>
-                  <p className="font-mono text-lg font-bold text-emerald-700">
-                    {formatCurrency(result.zippyNetProfit, result.currency)}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    (Cobra - Paga al PSP)
-                  </p>
-                </div>
-
-                <div className="rounded-lg bg-gray-50 p-3">
-                  <p className="mb-1 text-xs text-gray-600">Margen Zippy</p>
-                  <p className="font-mono text-lg font-bold">
-                    {result.zippyMargin.toFixed(2)}%
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    (% sobre lo que cobra)
-                  </p>
-                </div>
+              <div className="rounded-lg bg-emerald-50 p-3">
+                <p className="mb-1 text-xs text-gray-600">Ganancia Neta Zippy</p>
+                <p className="font-mono text-lg font-bold text-emerald-700">
+                  {formatCurrency(result.zippyNetProfit, result.currency)}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">
+                  (Comisión Zippy + Impuestos)
+                </p>
               </div>
 
               <div className="rounded-lg border-2 border-gray-200 bg-gray-50 p-3">
@@ -366,15 +354,15 @@ export function PaymentSimulator() {
                     </span>
                   </div>
                   <div className="flex justify-between text-red-600">
-                    <span>- Zippy cobra al Merchant</span>
+                    <span>- Comisión Zippy (+ impuestos)</span>
                     <span className="font-mono">
                       -{formatCurrency(result.totalMerchantCommission, result.currency)}
                     </span>
                   </div>
                   <div className="flex justify-between text-red-600">
-                    <span>- PSP cobra al Merchant</span>
+                    <span>- Comisión PSP</span>
                     <span className="font-mono">
-                      -{formatCurrency(result.zippyCost, result.currency)}
+                      -{formatCurrency(result.pspCommission.amount, result.currency)}
                     </span>
                   </div>
                   <div className="flex justify-between border-t pt-1 font-semibold text-green-600">

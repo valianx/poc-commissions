@@ -48,9 +48,8 @@ export interface SimulationResult {
   pspCommission: PSPCommissionBreakdown;
 
   // Resumen financiero
-  merchantReceives: number; // Lo que recibe el merchant (monto original - comisión Zippy - comisión PSP)
-  zippyRevenue: number; // Lo que cobra Zippy al merchant (comisión base + impuestos)
-  zippyCost: number; // Lo que Zippy paga al PSP
-  zippyNetProfit: number; // Ganancia neta de Zippy (revenue - costo PSP)
-  zippyMargin: number; // Margen de Zippy (% de ganancia neta sobre revenue)
+  merchantReceives: number; // Lo que recibe el merchant (monto original - todo lo cobrado)
+  zippyRevenue: number; // Total que cobra Zippy al merchant (comisión Zippy + impuestos + comisión PSP)
+  zippyCost: number; // Lo que Zippy paga al PSP (pass-through)
+  zippyNetProfit: number; // Ganancia neta de Zippy (solo comisión Zippy + impuestos)
 }

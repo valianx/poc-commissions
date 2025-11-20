@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMerchantsStore } from "@/lib/stores/merchants.store";
 import { useRouter } from "next/navigation";
 import { v4 as uuidv4 } from "uuid";
-import { Eye, EyeOff, RefreshCw } from "lucide-react";
+import { Eye, EyeOff, RefreshCw, Plus } from "lucide-react";
 
 const COUNTRIES = [
   { code: "CL", name: "Chile" },
@@ -48,6 +48,8 @@ export function MerchantForm() {
 
   const countries = watch("countries") || [];
   const merchantName = watch("name") || "";
+  const apiKeyRef = watch("callbackApiKeyRef");
+  const secretKeyRef = watch("callbackSecretKeyRef");
 
   // Auto-generate code based on merchant name
   const generateCode = (name: string) => {
@@ -251,9 +253,13 @@ export function MerchantForm() {
                   variant="outline"
                   size="icon"
                   onClick={generateApiKey}
-                  title="Generar UUID"
+                  title={apiKeyRef ? "Regenerar UUID" : "Generar UUID"}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  {apiKeyRef ? (
+                    <RefreshCw className="h-4 w-4" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -286,9 +292,13 @@ export function MerchantForm() {
                   variant="outline"
                   size="icon"
                   onClick={generateSecretKey}
-                  title="Generar UUID"
+                  title={secretKeyRef ? "Regenerar UUID" : "Generar UUID"}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  {secretKeyRef ? (
+                    <RefreshCw className="h-4 w-4" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>

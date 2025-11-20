@@ -16,11 +16,19 @@ export interface Channel {
   deletedAt: string | null;
 }
 
+export interface PSPCommissionByCountry {
+  countryCode: string;
+  commissionType: "PERCENTAGE" | "FIXED";
+  percentageValue: number | null; // e.g., 0.025 for 2.5%
+  fixedValue: number | null;
+}
+
 export interface PSP {
   id: string;
   code: string;
   name: string;
   isActive: boolean;
+  commissionsByCountry: PSPCommissionByCountry[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

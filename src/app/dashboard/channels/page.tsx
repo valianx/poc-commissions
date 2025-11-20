@@ -13,10 +13,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Edit } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function ChannelsPage() {
+  const router = useRouter();
   const { channels, psps, fetchChannels, fetchPSPs, deleteChannel, deletePSP } =
     useChannelsStore();
   const [activeTab, setActiveTab] = useState<"channels" | "psps">("channels");
@@ -199,13 +201,22 @@ export default function ChannelsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeletePSP(psp.id, psp.name)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => router.push(`/dashboard/channels/psps/${psp.id}`)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeletePSP(psp.id, psp.name)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))

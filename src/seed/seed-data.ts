@@ -79,6 +79,20 @@ export function seedDatabase() {
       code: "PAYU",
       name: "PayU",
       isActive: true,
+      commissionsByCountry: [
+        {
+          countryCode: "CL",
+          commissionType: "PERCENTAGE",
+          percentageValue: 0.029, // 2.9%
+          fixedValue: null,
+        },
+        {
+          countryCode: "AR",
+          commissionType: "PERCENTAGE",
+          percentageValue: 0.035, // 3.5%
+          fixedValue: null,
+        },
+      ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,
@@ -88,6 +102,20 @@ export function seedDatabase() {
       code: "MERCADOPAGO",
       name: "MercadoPago",
       isActive: true,
+      commissionsByCountry: [
+        {
+          countryCode: "BR",
+          commissionType: "PERCENTAGE",
+          percentageValue: 0.0499, // 4.99%
+          fixedValue: null,
+        },
+        {
+          countryCode: "AR",
+          commissionType: "PERCENTAGE",
+          percentageValue: 0.0399, // 3.99%
+          fixedValue: null,
+        },
+      ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,
@@ -97,6 +125,14 @@ export function seedDatabase() {
       code: "TRANSBANK",
       name: "Transbank",
       isActive: true,
+      commissionsByCountry: [
+        {
+          countryCode: "CL",
+          commissionType: "PERCENTAGE",
+          percentageValue: 0.025, // 2.5%
+          fixedValue: null,
+        },
+      ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,

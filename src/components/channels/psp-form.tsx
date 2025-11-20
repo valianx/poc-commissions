@@ -1,14 +1,33 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { pspSchema, PSPFormData } from "@/lib/validations/channel.schema";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useChannelsStore } from "@/lib/stores/channels.store";
 import { useRouter } from "next/navigation";
+import { Plus, X } from "lucide-react";
+
+const pspFormSchema = z.object({
+  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  code: z.string()
+    .min(2, "El código debe tener al menos 2 caracteres")
+    .regex(/^[A-Z_]+$/, "El código debe contener solo mayúsculas y guiones bajos"),
+  isActive: z.boolean(),
+  commissionsByCountry: z.array(z.object({
+    countryCode: z.string().length(2, "Código de país inválido"),
+    commissionType: z.enum(["PERCENTAGE", "FIXED"]),
+    percentageValue: z.string().optional(),
+    fixedValue: z.string().optional(),
+  })).optional(),
+});
+
+type PSPFormData = z.infer<typeof pspFormSchema>;
+
+const AVAILABLE_COUNTRIES = ["AR", "BR", "CL", "CO", "MX", "PE"];
 
 export function PSPForm() {
   const router = useRouter();
@@ -17,21 +36,54 @@ export function PSPForm() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
+    watch,
   } = useForm<PSPFormData>({
-    resolver: zodResolver(pspSchema),
+    resolver: zodResolver(pspFormSchema),
     defaultValues: {
       isActive: true,
+      commissionsByCountry: [],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "commissionsByCountry",
   });
 
   const onSubmit = async (data: PSPFormData) => {
     try {
-      createPSP(data);
+      const processedCommissions = data.commissionsByCountry?.map(commission => ({
+        countryCode: commission.countryCode,
+        commissionType: commission.commissionType,
+        percentageValue: commission.percentageValue && commission.commissionType === "PERCENTAGE"
+          ? parseFloat(commission.percentageValue) / 100
+          : null,
+        fixedValue: commission.fixedValue && commission.commissionType === "FIXED"
+          ? parseFloat(commission.fixedValue)
+          : null,
+      })) || [];
+
+      createPSP({
+        name: data.name,
+        code: data.code,
+        isActive: data.isActive,
+        commissionsByCountry: processedCommissions,
+      });
       router.push("/dashboard/channels");
     } catch (error) {
       console.error("Error creating PSP:", error);
     }
+  };
+
+  const getUsedCountries = () => {
+    return watch("commissionsByCountry")?.map(c => c.countryCode) || [];
+  };
+
+  const getAvailableCountries = () => {
+    const usedCountries = getUsedCountries();
+    return AVAILABLE_COUNTRIES.filter(country => !usedCountries.includes(country));
   };
 
   return (
@@ -43,11 +95,12 @@ export function PSPForm() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="code">Código del PSP</Label>
+              <Label htmlFor="code">Código del PSP *</Label>
               <Input
                 id="code"
                 {...register("code")}
-                placeholder="Ej: stripe, mercadopago"
+                placeholder="Ej: PAYU, STRIPE"
+                className="uppercase"
               />
               {errors.code && (
                 <p className="text-sm text-red-500">{errors.code.message}</p>
@@ -55,29 +108,16 @@ export function PSPForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre</Label>
+              <Label htmlFor="name">Nombre *</Label>
               <Input
                 id="name"
                 {...register("name")}
-                placeholder="Ej: Stripe, MercadoPago"
+                placeholder="Ej: PayU, Stripe"
               />
               {errors.name && (
                 <p className="text-sm text-red-500">{errors.name.message}</p>
               )}
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="apiUrl">URL de API</Label>
-            <Input
-              id="apiUrl"
-              {...register("apiUrl")}
-              placeholder="https://api.example.com"
-              type="url"
-            />
-            {errors.apiUrl && (
-              <p className="text-sm text-red-500">{errors.apiUrl.message}</p>
-            )}
           </div>
 
           <div className="flex items-center space-x-2">
@@ -87,8 +127,152 @@ export function PSPForm() {
               {...register("isActive")}
               className="h-4 w-4 rounded border-gray-300"
             />
-            <Label htmlFor="isActive">PSP Activo</Label>
+            <Label htmlFor="isActive" className="cursor-pointer">
+              PSP Activo
+            </Label>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* PSP Commissions by Country */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Comisiones del PSP por País (Opcional)</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Estas comisiones son lo que el PSP cobra (solo para trazabilidad de costos)
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => append({
+                countryCode: "",
+                commissionType: "PERCENTAGE",
+                percentageValue: "",
+                fixedValue: "",
+              })}
+              disabled={getAvailableCountries().length === 0}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Agregar País
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {fields.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground py-8">
+              No hay comisiones configuradas. Haga clic en "Agregar País" para crear una.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {fields.map((field, index) => (
+                <div key={field.id} className="rounded-lg border p-4 space-y-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">Comisión {index + 1}</h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => remove(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor={`commissionsByCountry.${index}.countryCode`}>
+                        País *
+                      </Label>
+                      <select
+                        id={`commissionsByCountry.${index}.countryCode`}
+                        {...register(`commissionsByCountry.${index}.countryCode`)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Seleccionar país</option>
+                        {AVAILABLE_COUNTRIES.map(country => (
+                          <option
+                            key={country}
+                            value={country}
+                            disabled={
+                              getUsedCountries().includes(country) &&
+                              watch(`commissionsByCountry.${index}.countryCode`) !== country
+                            }
+                          >
+                            {country}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.commissionsByCountry?.[index]?.countryCode && (
+                        <p className="text-sm text-red-500">
+                          {errors.commissionsByCountry[index]?.countryCode?.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`commissionsByCountry.${index}.commissionType`}>
+                        Tipo de Comisión *
+                      </Label>
+                      <select
+                        id={`commissionsByCountry.${index}.commissionType`}
+                        {...register(`commissionsByCountry.${index}.commissionType`)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="PERCENTAGE">Porcentual</option>
+                        <option value="FIXED">Fija</option>
+                      </select>
+                    </div>
+
+                    {watch(`commissionsByCountry.${index}.commissionType`) === "PERCENTAGE" && (
+                      <div className="space-y-2">
+                        <Label htmlFor={`commissionsByCountry.${index}.percentageValue`}>
+                          Porcentaje (%)
+                        </Label>
+                        <Input
+                          id={`commissionsByCountry.${index}.percentageValue`}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          placeholder="Ej: 2.9"
+                          {...register(`commissionsByCountry.${index}.percentageValue`)}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Ingrese el porcentaje (ej: 2.9 para 2.9%)
+                        </p>
+                      </div>
+                    )}
+
+                    {watch(`commissionsByCountry.${index}.commissionType`) === "FIXED" && (
+                      <div className="space-y-2">
+                        <Label htmlFor={`commissionsByCountry.${index}.fixedValue`}>
+                          Valor Fijo
+                        </Label>
+                        <Input
+                          id={`commissionsByCountry.${index}.fixedValue`}
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Ej: 500"
+                          {...register(`commissionsByCountry.${index}.fixedValue`)}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="rounded-md border border-blue-200 bg-blue-50 p-2">
+                    <p className="text-xs text-blue-900">
+                      Estas comisiones son informativas (lo que el PSP cobra) y se utilizan para trazabilidad de costos
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

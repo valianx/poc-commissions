@@ -6,6 +6,7 @@ import {
   pspCommissionsRepository,
 } from "@/lib/repositories/commissions.repository";
 import { PaymentSimulation, SimulationResult } from "@/types/simulator";
+import { channelsRepository, pspsRepository } from "@/lib/repositories/channels.repository";
 
 export class CommissionCalculatorService {
   calculate(simulation: PaymentSimulation): SimulationResult {
@@ -87,20 +88,51 @@ export class CommissionCalculatorService {
     const totalMerchantCommission = baseCommission + totalTaxes;
 
     // 6. Obtener comisión PSP
-    const pspCommissions = pspCommissionsRepository.getByChannel(
-      simulation.countryCode,
-      simulation.channelCode
-    );
-
-    const pspCommission = pspCommissions[0];
-    if (!pspCommission) {
-      throw new Error("No hay comisión PSP configurada");
+    // Primero obtener el canal para encontrar el PSP asignado
+    const channel = channelsRepository.getByCode(simulation.channelCode);
+    if (!channel) {
+      throw new Error("Canal no encontrado");
     }
 
-    const pspAmount = this.calculatePSPCommission(
-      simulation.amount,
-      pspCommission
+    // Buscar el PSP asignado para el país en este canal
+    const pspAssignment = channel.pspAssignments?.find(
+      (assignment) => assignment.countryCode === simulation.countryCode && assignment.isActive
     );
+
+    if (!pspAssignment) {
+      throw new Error(`No hay PSP asignado para el canal ${simulation.channelCode} en ${simulation.countryCode}`);
+    }
+
+    // Obtener el PSP
+    const psp = pspsRepository.getById(pspAssignment.pspId);
+    if (!psp) {
+      throw new Error("PSP no encontrado");
+    }
+
+    // Buscar la comisión del PSP para este país
+    const pspCommissionConfig = psp.commissionsByCountry?.find(
+      (commission) => commission.countryCode === simulation.countryCode
+    );
+
+    if (!pspCommissionConfig) {
+      throw new Error(`No hay comisión configurada para el PSP ${psp.name} en ${simulation.countryCode}`);
+    }
+
+    // Calcular el monto de la comisión del PSP
+    let pspAmount = 0;
+    let pspType: "FIXED" | "PERCENTAGE" | "MIXED" = "FIXED";
+    let pspPercentage: number | undefined;
+    let pspFixedFee: number | undefined;
+
+    if (pspCommissionConfig.commissionType === "PERCENTAGE" && pspCommissionConfig.percentageValue !== null) {
+      pspAmount = simulation.amount * pspCommissionConfig.percentageValue;
+      pspType = "PERCENTAGE";
+      pspPercentage = pspCommissionConfig.percentageValue;
+    } else if (pspCommissionConfig.commissionType === "FIXED" && pspCommissionConfig.fixedValue !== null) {
+      pspAmount = pspCommissionConfig.fixedValue;
+      pspType = "FIXED";
+      pspFixedFee = pspCommissionConfig.fixedValue;
+    }
 
     // 7. Calcular resultado final
     // El merchant recibe el monto original menos las comisiones de Zippy y PSP
@@ -133,18 +165,10 @@ export class CommissionCalculatorService {
       totalTaxes,
       totalMerchantCommission,
       pspCommission: {
-        pspName: pspCommission.pspName,
-        type: pspCommission.commissionType,
-        percentage:
-          pspCommission.commissionType === "PERCENTAGE" ||
-          pspCommission.commissionType === "MIXED"
-            ? pspCommission.percentage
-            : undefined,
-        fixedFee:
-          pspCommission.commissionType === "FIXED" ||
-          pspCommission.commissionType === "MIXED"
-            ? pspCommission.fixedFee
-            : undefined,
+        pspName: psp.name,
+        type: pspType,
+        percentage: pspPercentage,
+        fixedFee: pspFixedFee,
         amount: pspAmount,
       },
       merchantReceives,
@@ -189,16 +213,6 @@ export class CommissionCalculatorService {
     return { type, baseCommission, percentage, fixedFee };
   }
 
-  private calculatePSPCommission(amount: number, pspCommission: any): number {
-    if (pspCommission.commissionType === "PERCENTAGE") {
-      return amount * pspCommission.percentage;
-    } else if (pspCommission.commissionType === "FIXED") {
-      return pspCommission.fixedFee;
-    } else if (pspCommission.commissionType === "MIXED") {
-      return amount * pspCommission.percentage + pspCommission.fixedFee;
-    }
-    return 0;
-  }
 }
 
 export const commissionCalculator = new CommissionCalculatorService();

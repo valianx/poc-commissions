@@ -62,7 +62,7 @@ export default function MerchantCommissionsPage() {
     fetchTaxConfigs,
   } = useCommissionsStore();
   const { merchants, fetchMerchants } = useMerchantsStore();
-  const { channels, fetchChannels } = useChannelsStore();
+  const { channels, psps, fetchChannels, fetchPSPs } = useChannelsStore();
   const { fetchConfigs, getConfigsByMerchant } = useMerchantChannelConfigStore();
 
   const [filterStatus, setFilterStatus] = useState<"all" | "configured" | "unconfigured">(
@@ -75,6 +75,7 @@ export default function MerchantCommissionsPage() {
   useEffect(() => {
     fetchMerchants();
     fetchChannels();
+    fetchPSPs();
     fetchAssignments();
     fetchTemplates();
     fetchParameters();
@@ -84,6 +85,7 @@ export default function MerchantCommissionsPage() {
   }, [
     fetchMerchants,
     fetchChannels,
+    fetchPSPs,
     fetchAssignments,
     fetchTemplates,
     fetchParameters,
@@ -166,8 +168,13 @@ export default function MerchantCommissionsPage() {
 
           const template = assignment ? getTemplate(assignment.commissionTemplateId) : null;
 
+          // Get PSP info from merchant channel config
+          const psp = psps.find((p) => p.id === config.pspId);
+
+          // Find PSP commission using the pspId from merchant channel config
           const pspCommission = pspCommissions.find(
             (pc) =>
+              pc.pspId === config.pspId &&
               pc.channelCode === channel.code &&
               pc.countryCode === countryCode &&
               pc.isActive
@@ -210,7 +217,7 @@ export default function MerchantCommissionsPage() {
           commissionValue: assignment
             ? renderCommissionValue(assignment.commissionTemplateId)
             : undefined,
-          pspName: pspCommission?.pspName,
+          pspName: psp?.name,
           pspCommissionValue,
           taxesCount: taxes.length,
           status: config.isActive ? assignment?.status : "INACTIVE",

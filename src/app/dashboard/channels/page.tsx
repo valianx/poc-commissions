@@ -115,7 +115,12 @@ export default function ChannelsPage() {
                     channels.map((channel) => (
                       <TableRow key={channel.id}>
                         <TableCell className="font-medium">
-                          {channel.name}
+                          <Link
+                            href={`/dashboard/channels/${channel.id}`}
+                            className="text-primary hover:underline"
+                          >
+                            {channel.name}
+                          </Link>
                         </TableCell>
                         <TableCell>
                           <code className="rounded bg-gray-100 px-2 py-1 text-sm">

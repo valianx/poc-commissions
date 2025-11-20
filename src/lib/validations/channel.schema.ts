@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+export const pspAssignmentSchema = z.object({
+  countryCode: z.string().length(2, "Código de país debe tener 2 caracteres"),
+  pspId: z.string().uuid("Debe ser un ID válido"),
+  isActive: z.boolean(),
+});
+
 export const channelSchema = z.object({
   code: z
     .string()
@@ -18,6 +24,7 @@ export const channelSchema = z.object({
     .min(10, "La descripción debe tener al menos 10 caracteres")
     .max(500, "La descripción no puede superar los 500 caracteres"),
   isActive: z.boolean(),
+  pspAssignments: z.array(pspAssignmentSchema),
 });
 
 export const pspSchema = z.object({

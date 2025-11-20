@@ -22,6 +22,7 @@ export function ChannelForm() {
     resolver: zodResolver(channelSchema),
     defaultValues: {
       isActive: true,
+      pspAssignments: [],
     },
   });
 

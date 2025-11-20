@@ -71,61 +71,7 @@ export function seedDatabase() {
     },
   ];
 
-  // Create channels
-  const channels: Channel[] = [
-    {
-      id: uuidv4(),
-      code: "pix",
-      name: "PIX",
-      description: "Sistema de pagos instantáneos de Brasil",
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deletedAt: null,
-    },
-    {
-      id: uuidv4(),
-      code: "credit_card",
-      name: "Tarjeta de Crédito",
-      description: "Pagos con tarjetas de crédito Visa/Mastercard",
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deletedAt: null,
-    },
-    {
-      id: uuidv4(),
-      code: "debit_card",
-      name: "Tarjeta de Débito",
-      description: "Pagos con tarjetas de débito",
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deletedAt: null,
-    },
-    {
-      id: uuidv4(),
-      code: "bank_transfer",
-      name: "Transferencia Bancaria",
-      description: "Transferencias bancarias directas",
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deletedAt: null,
-    },
-    {
-      id: uuidv4(),
-      code: "webpay",
-      name: "WebPay",
-      description: "Sistema de pago chileno Transbank",
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deletedAt: null,
-    },
-  ];
-
-  // Create PSPs
+  // Create PSPs first (needed for channel assignments)
   const psps: PSP[] = [
     {
       id: uuidv4(),
@@ -150,6 +96,82 @@ export function seedDatabase() {
       code: "TRANSBANK",
       name: "Transbank",
       isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+  ];
+
+  // Create channels
+  const channels: Channel[] = [
+    {
+      id: uuidv4(),
+      code: "pix",
+      name: "PIX",
+      description: "Sistema de pagos instantáneos de Brasil",
+      isActive: true,
+      pspAssignments: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      code: "credit_card",
+      name: "Tarjeta de Crédito",
+      description: "Pagos con tarjetas de crédito Visa/Mastercard",
+      isActive: true,
+      pspAssignments: [
+        {
+          countryCode: "CL",
+          pspId: psps[2].id, // Transbank for Chile
+          isActive: true,
+        },
+        {
+          countryCode: "AR",
+          pspId: psps[1].id, // MercadoPago for Argentina
+          isActive: true,
+        },
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      code: "debit_card",
+      name: "Tarjeta de Débito",
+      description: "Pagos con tarjetas de débito",
+      isActive: true,
+      pspAssignments: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      code: "bank_transfer",
+      name: "Transferencia Bancaria",
+      description: "Transferencias bancarias directas",
+      isActive: true,
+      pspAssignments: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      code: "webpay",
+      name: "WebPay",
+      description: "Sistema de pago chileno Transbank",
+      isActive: true,
+      pspAssignments: [
+        {
+          countryCode: "CL",
+          pspId: psps[2].id, // Transbank for Chile
+          isActive: true,
+        },
+      ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,

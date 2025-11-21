@@ -17,6 +17,7 @@ export interface CommissionAssignment {
   countryCode: string;
   channelCode: string;
   description?: string; // Optional description for why this commission is charged
+  isVat?: boolean; // If true, this commission is a tax (VAT/IVA) that applies to Zippy's commission, not the transaction amount
   // Date range for when this commission is valid
   startDate: string; // Required: when commission starts
   endDate: string | null; // null means no end date (indefinite)

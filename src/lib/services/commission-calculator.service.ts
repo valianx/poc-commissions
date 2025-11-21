@@ -25,11 +25,18 @@ export class CommissionCalculatorService {
     }
 
     // 2. Calculate base commission by summing ALL active assignments
+    // Separate direct commissions from VAT commissions
     let baseCommission: number = 0;
     let totalPercentage: number = 0;
     let totalFixedFee: number = 0;
     let hasPercentage = false;
     let hasFixed = false;
+
+    // Collect VAT commissions to apply later (after calculating base commission)
+    const vatCommissions: Array<{
+      percentageValue: number | null;
+      fixedValue: number | null;
+    }> = [];
 
     // Sum all active commission assignments
     for (const assignment of assignments) {
@@ -64,17 +71,28 @@ export class CommissionCalculatorService {
 
         // If no range found, use base values
         if (!rangeFound) {
-          const percentageComm = (assignment.basePercentageValue || 0) * simulation.amount;
-          const fixedComm = assignment.baseFixedValue || 0;
-          baseCommission += percentageComm + fixedComm;
+          // Check if this is a VAT commission
+          if (assignment.isVat) {
+            // VAT commissions are applied to Zippy's commission, not transaction amount
+            // Store them for later calculation
+            vatCommissions.push({
+              percentageValue: assignment.basePercentageValue || null,
+              fixedValue: assignment.baseFixedValue || null,
+            });
+          } else {
+            // Direct commissions apply to transaction amount
+            const percentageComm = (assignment.basePercentageValue || 0) * simulation.amount;
+            const fixedComm = assignment.baseFixedValue || 0;
+            baseCommission += percentageComm + fixedComm;
 
-          if (assignment.basePercentageValue) {
-            totalPercentage += assignment.basePercentageValue;
-            hasPercentage = true;
-          }
-          if (assignment.baseFixedValue) {
-            totalFixedFee += assignment.baseFixedValue;
-            hasFixed = true;
+            if (assignment.basePercentageValue) {
+              totalPercentage += assignment.basePercentageValue;
+              hasPercentage = true;
+            }
+            if (assignment.baseFixedValue) {
+              totalFixedFee += assignment.baseFixedValue;
+              hasFixed = true;
+            }
           }
         }
       } else {
@@ -115,6 +133,17 @@ export class CommissionCalculatorService {
     const percentage = hasPercentage ? totalPercentage : null;
     const fixedFee = hasFixed ? totalFixedFee : null;
 
+    // 3. Apply VAT commissions to baseCommission
+    let vatAmount = 0;
+    for (const vat of vatCommissions) {
+      const vatPercentageComm = (vat.percentageValue || 0) * baseCommission;
+      const vatFixedComm = vat.fixedValue || 0;
+      vatAmount += vatPercentageComm + vatFixedComm;
+    }
+
+    // Total merchant commission = base commission + VAT on base commission
+    const totalMerchantCommissionBeforePSP = baseCommission + vatAmount;
+
     // 4. Obtener el canal para encontrar tanto el PSP asignado como los taxes
     const channel = channelsRepository.getByCode(simulation.channelCode);
     if (!channel) {
@@ -128,7 +157,8 @@ export class CommissionCalculatorService {
       channel.id
     );
 
-    // 6. Obtener impuestos desde la configuración del merchant channel
+    // 6. Legacy tax support from merchant channel config (deprecated - use isVat instead)
+    // This is kept for backward compatibility but VAT should now be configured as commission assignments with isVat=true
     let taxesBreakdown: Array<{
       taxCode: string;
       taxName: string;
@@ -152,8 +182,8 @@ export class CommissionCalculatorService {
       0
     );
 
-    // 7. Comisión total al merchant
-    const totalMerchantCommission = baseCommission + totalTaxes;
+    // 7. Comisión total al merchant = base commission + VAT on base commission + legacy taxes
+    const totalMerchantCommission = totalMerchantCommissionBeforePSP + totalTaxes;
 
     // 8. Obtener comisión PSP
 
@@ -221,10 +251,10 @@ export class CommissionCalculatorService {
         baseAmount: baseCommission,
         percentage: percentage ?? undefined,
         fixedFee: fixedFee ?? undefined,
-        subtotal: baseCommission,
+        subtotal: totalMerchantCommissionBeforePSP, // Includes base commission + VAT
       },
       taxes: taxesBreakdown,
-      totalTaxes,
+      totalTaxes: vatAmount + totalTaxes, // Include VAT in total taxes
       totalMerchantCommission,
       pspCommission: {
         pspName: psp.name,

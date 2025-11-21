@@ -21,6 +21,7 @@ const configureSimpleCommissionSchema = z.object({
   countryCode: z.string().length(2, "Código de país inválido"),
   channelCode: z.string().min(1, "Debe seleccionar un canal"),
   description: z.string().optional(),
+  isVat: z.boolean().optional(),
   // Assignment dates (required)
   startDate: z.string().min(1, "Fecha de inicio requerida"),
   endDate: z.string().optional(),
@@ -87,6 +88,7 @@ export default function ConfigureSimpleCommissionPage() {
       countryCode: preSelectedCountry || "",
       channelCode: preSelectedChannel || "",
       description: "",
+      isVat: false,
       startDate: new Date().toISOString().split('T')[0], // Today's date
       endDate: "",
       assignedBy: "admin@zippy.com",
@@ -182,6 +184,7 @@ export default function ConfigureSimpleCommissionPage() {
         countryCode: data.countryCode,
         channelCode: data.channelCode,
         description: data.description || undefined,
+        isVat: data.isVat || false,
         startDate,
         endDate: data.endDate || null,
         basePercentageValue: data.basePercentageValue
@@ -328,6 +331,22 @@ export default function ConfigureSimpleCommissionPage() {
                 Agregue una descripción opcional para explicar el propósito de esta comisión
               </p>
             </div>
+
+            {/* Is VAT Checkbox */}
+            <div className="flex items-center space-x-2">
+              <input
+                id="isVat"
+                type="checkbox"
+                {...register("isVat")}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
+              />
+              <Label htmlFor="isVat" className="cursor-pointer font-normal">
+                Esta es una comisión de impuesto (VAT/IVA)
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Si marca esta opción, la comisión se aplicará sobre la comisión de Zippy en lugar del monto total de la transacción
+            </p>
 
             {/* Date Range Section */}
             <div className="rounded-md border border-blue-200 bg-blue-50 p-4 space-y-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useMerchantsStore } from "@/lib/stores/merchants.store";
 import { useChannelsStore } from "@/lib/stores/channels.store";
+import { useCommissionsStore } from "@/lib/stores/commissions.store";
 import { commissionCalculator } from "@/lib/services/commission-calculator.service";
 import { SimulationResult } from "@/types/simulator";
 import { formatCurrency } from "@/lib/utils";
@@ -22,13 +23,15 @@ import { AlertCircle } from "lucide-react";
 export function PaymentSimulator() {
   const { merchants, fetchMerchants } = useMerchantsStore();
   const { channels, fetchChannels } = useChannelsStore();
+  const { assignments, fetchAssignments } = useCommissionsStore();
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMerchants();
     fetchChannels();
-  }, [fetchMerchants, fetchChannels]);
+    fetchAssignments();
+  }, [fetchMerchants, fetchChannels, fetchAssignments]);
 
   const {
     register,
@@ -44,7 +47,47 @@ export function PaymentSimulator() {
     },
   });
 
-  const selectedMerchant = merchants.find((m) => m.id === watch("merchantId"));
+  const selectedMerchantId = watch("merchantId");
+  const selectedCountryCode = watch("countryCode");
+  const selectedMerchant = merchants.find((m) => m.id === selectedMerchantId);
+
+  // Get countries that have at least one active commission configured
+  const availableCountries = useMemo(() => {
+    if (!selectedMerchantId) return [];
+
+    const merchant = merchants.find((m) => m.id === selectedMerchantId);
+    if (!merchant) return [];
+
+    // Filter countries that have at least one active commission assignment
+    return merchant.countries.filter((country) => {
+      return assignments.some(
+        (assignment) =>
+          assignment.merchantId === selectedMerchantId &&
+          assignment.countryCode === country &&
+          assignment.status === "ACTIVE"
+      );
+    });
+  }, [selectedMerchantId, merchants, assignments]);
+
+  // Get channels that have active commissions for the selected merchant and country
+  const availableChannels = useMemo(() => {
+    if (!selectedMerchantId || !selectedCountryCode) return [];
+
+    // Get all channel codes that have active assignments for this merchant and country
+    const channelCodes = assignments
+      .filter(
+        (assignment) =>
+          assignment.merchantId === selectedMerchantId &&
+          assignment.countryCode === selectedCountryCode &&
+          assignment.status === "ACTIVE"
+      )
+      .map((assignment) => assignment.channelCode);
+
+    // Return the full channel objects for those codes
+    return channels.filter(
+      (channel) => channel.isActive && channelCodes.includes(channel.code)
+    );
+  }, [selectedMerchantId, selectedCountryCode, assignments, channels]);
 
   const onSubmit = (data: PaymentSimulationFormData) => {
     try {
@@ -96,9 +139,10 @@ export function PaymentSimulator() {
                 id="countryCode"
                 {...register("countryCode")}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                disabled={!selectedMerchantId}
               >
                 <option value="">Seleccionar País</option>
-                {selectedMerchant?.countries.map((country) => (
+                {availableCountries.map((country) => (
                   <option key={country} value={country}>
                     {country}
                   </option>
@@ -109,6 +153,11 @@ export function PaymentSimulator() {
                   {errors.countryCode.message}
                 </p>
               )}
+              {selectedMerchantId && availableCountries.length === 0 && (
+                <p className="text-sm text-amber-600">
+                  No hay comisiones configuradas para este merchant
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -117,19 +166,23 @@ export function PaymentSimulator() {
                 id="channelCode"
                 {...register("channelCode")}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                disabled={!selectedCountryCode}
               >
                 <option value="">Seleccionar Canal</option>
-                {channels
-                  .filter((c) => c.isActive)
-                  .map((channel) => (
-                    <option key={channel.id} value={channel.code}>
-                      {channel.name}
-                    </option>
-                  ))}
+                {availableChannels.map((channel) => (
+                  <option key={channel.id} value={channel.code}>
+                    {channel.name}
+                  </option>
+                ))}
               </select>
               {errors.channelCode && (
                 <p className="text-sm text-red-500">
                   {errors.channelCode.message}
+                </p>
+              )}
+              {selectedCountryCode && availableChannels.length === 0 && (
+                <p className="text-sm text-amber-600">
+                  No hay canales con comisiones configuradas para este país
                 </p>
               )}
             </div>

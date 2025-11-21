@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from "uuid";
 // Form schema for editing
 const editCommissionSchema = z.object({
   // Assignment dates
+  description: z.string().optional(),
   startDate: z.string().min(1, "Fecha de inicio requerida"),
   endDate: z.string().optional(),
   status: z.enum(["ACTIVE", "SCHEDULED", "EXPIRED", "CANCELLED"]),
@@ -76,6 +77,7 @@ export default function EditCommissionPage() {
   } = useForm<EditCommissionFormData>({
     resolver: zodResolver(editCommissionSchema),
     defaultValues: {
+      description: "",
       status: "ACTIVE",
       basePercentageValue: "",
       baseFixedValue: "",
@@ -93,6 +95,7 @@ export default function EditCommissionPage() {
   useEffect(() => {
     if (assignment) {
       reset({
+        description: assignment.description || "",
         status: assignment.status || "ACTIVE",
         basePercentageValue: assignment.basePercentageValue
           ? (assignment.basePercentageValue * 100).toString()
@@ -155,6 +158,7 @@ export default function EditCommissionPage() {
       const status = data.status;
 
       await updateAssignment(assignmentId, {
+        description: data.description || undefined,
         startDate: data.startDate,
         endDate: data.endDate || null,
         basePercentageValue: data.basePercentageValue
@@ -232,6 +236,30 @@ export default function EditCommissionPage() {
                   Cambie manualmente el estado de la comisión
                 </p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Description Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Descripción</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Descripción opcional del propósito de esta comisión
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="description">Descripción (Opcional)</Label>
+              <Input
+                id="description"
+                type="text"
+                {...register("description")}
+                placeholder="Ej: Comisión especial para promoción navideña"
+              />
+              <p className="text-xs text-muted-foreground">
+                Agregue una descripción opcional para explicar el propósito de esta comisión
+              </p>
             </div>
           </CardContent>
         </Card>

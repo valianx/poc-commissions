@@ -37,10 +37,10 @@ interface ConfigurationRow {
   commissionValue?: string;
   pspName?: string;
   pspCommissionValue?: string;
-  taxesCount: number;
   status?: string;
   startDate?: string;
   endDate?: string | null;
+  description?: string;
 }
 
 export default function MerchantCommissionsPage() {
@@ -51,10 +51,8 @@ export default function MerchantCommissionsPage() {
   const {
     assignments,
     pspCommissions,
-    taxConfigs,
     fetchAssignments,
     fetchPSPCommissions,
-    fetchTaxConfigs,
   } = useCommissionsStore();
   const { merchants, fetchMerchants } = useMerchantsStore();
   const { channels, psps, fetchChannels, fetchPSPs } = useChannelsStore();
@@ -73,7 +71,6 @@ export default function MerchantCommissionsPage() {
     fetchPSPs();
     fetchAssignments();
     fetchPSPCommissions();
-    fetchTaxConfigs();
     fetchConfigs();
   }, [
     fetchMerchants,
@@ -81,7 +78,6 @@ export default function MerchantCommissionsPage() {
     fetchPSPs,
     fetchAssignments,
     fetchPSPCommissions,
-    fetchTaxConfigs,
     fetchConfigs,
   ]);
 
@@ -150,14 +146,6 @@ export default function MerchantCommissionsPage() {
               pc.isActive
           );
 
-          const taxes = taxConfigs.filter(
-            (tc) =>
-              tc.merchantId === merchantId &&
-              tc.channelCode === channel.code &&
-              tc.countryCode === countryCode &&
-              tc.isActive
-          );
-
           let pspCommissionValue = "N/A";
           if (pspCommission) {
             if (pspCommission.commissionType === "PERCENTAGE") {
@@ -187,10 +175,10 @@ export default function MerchantCommissionsPage() {
                 commissionValue: renderCommissionValue(assignment),
                 pspName: psp?.name,
                 pspCommissionValue,
-                taxesCount: taxes.length,
                 status: config.isActive ? assignment.status : "INACTIVE",
                 startDate: assignment.startDate,
                 endDate: assignment.endDate,
+                description: assignment.description,
               });
             });
           } else {
@@ -202,7 +190,6 @@ export default function MerchantCommissionsPage() {
               isConfigured: false,
               pspName: psp?.name,
               pspCommissionValue,
-              taxesCount: taxes.length,
               status: config.isActive ? "UNCONFIGURED" : "INACTIVE",
             });
           }
@@ -426,14 +413,13 @@ export default function MerchantCommissionsPage() {
                   <TableHead>Comisión Merchant</TableHead>
                   <TableHead>PSP</TableHead>
                   <TableHead>Comisión PSP</TableHead>
-                  <TableHead>Impuestos</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
+                    <TableCell colSpan={8} className="text-center py-8">
                       <p className="text-muted-foreground">
                         No hay configuraciones que coincidan con el filtro
                       </p>
@@ -525,17 +511,6 @@ export default function MerchantCommissionsPage() {
                         <div className="font-mono text-sm">
                           {row.pspCommissionValue}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {row.taxesCount > 0 ? (
-                          <Badge variant="outline">
-                            {row.taxesCount} impuesto{row.taxesCount > 1 ? "s" : ""}
-                          </Badge>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">
-                            Sin impuestos
-                          </span>
-                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">

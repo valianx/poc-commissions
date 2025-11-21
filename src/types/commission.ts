@@ -16,6 +16,7 @@ export interface CommissionAssignment {
   merchantId: string;
   countryCode: string;
   channelCode: string;
+  description?: string; // Optional description for why this commission is charged
   // Date range for when this commission is valid
   startDate: string; // Required: when commission starts
   endDate: string | null; // null means no end date (indefinite)

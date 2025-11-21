@@ -20,6 +20,7 @@ import { v4 as uuidv4 } from "uuid";
 const configureSimpleCommissionSchema = z.object({
   countryCode: z.string().length(2, "Código de país inválido"),
   channelCode: z.string().min(1, "Debe seleccionar un canal"),
+  description: z.string().optional(),
   // Assignment dates (required)
   startDate: z.string().min(1, "Fecha de inicio requerida"),
   endDate: z.string().optional(),
@@ -85,6 +86,7 @@ export default function ConfigureSimpleCommissionPage() {
     defaultValues: {
       countryCode: preSelectedCountry || "",
       channelCode: preSelectedChannel || "",
+      description: "",
       startDate: new Date().toISOString().split('T')[0], // Today's date
       endDate: "",
       assignedBy: "admin@zippy.com",
@@ -179,6 +181,7 @@ export default function ConfigureSimpleCommissionPage() {
         merchantId,
         countryCode: data.countryCode,
         channelCode: data.channelCode,
+        description: data.description || undefined,
         startDate,
         endDate: data.endDate || null,
         basePercentageValue: data.basePercentageValue
@@ -308,6 +311,22 @@ export default function ConfigureSimpleCommissionPage() {
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Description Field */}
+            <div className="space-y-2">
+              <Label htmlFor="description">
+                Descripción (Opcional)
+              </Label>
+              <Input
+                id="description"
+                type="text"
+                {...register("description")}
+                placeholder="Ej: Comisión especial para promoción navideña"
+              />
+              <p className="text-xs text-muted-foreground">
+                Agregue una descripción opcional para explicar el propósito de esta comisión
+              </p>
             </div>
 
             {/* Date Range Section */}

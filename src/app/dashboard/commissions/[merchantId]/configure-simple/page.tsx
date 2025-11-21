@@ -142,6 +142,7 @@ export default function ConfigureSimpleCommissionPage() {
   const onSubmit = (data: ConfigureSimpleCommissionFormData) => {
     try {
       setSaveError(null);
+      console.log("📝 Form data received:", data);
 
       // Process commission ranges (no dates, only isActive)
       const processedRanges = data.commissionRanges?.map(range => ({
@@ -167,7 +168,7 @@ export default function ConfigureSimpleCommissionPage() {
         status = "SCHEDULED";
       }
 
-      createAssignment({
+      const assignmentData = {
         merchantId,
         countryCode: data.countryCode,
         channelCode: data.channelCode,
@@ -182,14 +183,22 @@ export default function ConfigureSimpleCommissionPage() {
         commissionRanges: processedRanges,
         status,
         assignedBy: data.assignedBy,
-      });
+      };
+
+      console.log("💾 Saving assignment:", assignmentData);
+
+      createAssignment(assignmentData);
+
+      console.log("✅ Assignment created, refetching...");
 
       // Refetch to ensure we have the latest data
       fetchAssignments();
 
+      console.log("🔄 Redirecting to:", `/dashboard/commissions/${merchantId}`);
+
       router.push(`/dashboard/commissions/${merchantId}`);
     } catch (error) {
-      console.error("Error creating commission assignment:", error);
+      console.error("❌ Error creating commission assignment:", error);
       setSaveError(error instanceof Error ? error.message : "Error al guardar la comisión");
     }
   };

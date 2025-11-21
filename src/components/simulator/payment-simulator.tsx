@@ -22,7 +22,7 @@ import { AlertCircle } from "lucide-react";
 
 export function PaymentSimulator() {
   const { merchants, fetchMerchants } = useMerchantsStore();
-  const { channels, fetchChannels } = useChannelsStore();
+  const { channels, psps, fetchChannels, fetchPSPs } = useChannelsStore();
   const { assignments, fetchAssignments } = useCommissionsStore();
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,8 +30,9 @@ export function PaymentSimulator() {
   useEffect(() => {
     fetchMerchants();
     fetchChannels();
+    fetchPSPs();
     fetchAssignments();
-  }, [fetchMerchants, fetchChannels, fetchAssignments]);
+  }, [fetchMerchants, fetchChannels, fetchPSPs, fetchAssignments]);
 
   const {
     register,
@@ -83,11 +84,45 @@ export function PaymentSimulator() {
       )
       .map((assignment) => assignment.channelCode);
 
-    // Return the full channel objects for those codes
-    return channels.filter(
-      (channel) => channel.isActive && channelCodes.includes(channel.code)
-    );
-  }, [selectedMerchantId, selectedCountryCode, assignments, channels]);
+    // Filter channels that:
+    // 1. Are active
+    // 2. Have an active commission assignment
+    // 3. Have a PSP assigned for this country
+    // 4. That PSP has a commission configured for this country
+    return channels.filter((channel) => {
+      if (!channel.isActive || !channelCodes.includes(channel.code)) {
+        return false;
+      }
+
+      // Check if channel has a PSP assigned for this country
+      const pspAssignment = channel.pspAssignments?.find(
+        (assignment) =>
+          assignment.countryCode === selectedCountryCode &&
+          assignment.isActive
+      );
+
+      if (!pspAssignment) {
+        return false;
+      }
+
+      // Check if the assigned PSP has a commission configured for this country
+      const psp = psps.find((p) => p.id === pspAssignment.pspId);
+      if (!psp) {
+        return false;
+      }
+
+      // Verify the PSP has a commission configured for this country
+      const pspCommissionForCountry = psp.commissionsByCountry?.find(
+        (commission) => commission.countryCode === selectedCountryCode
+      );
+
+      if (!pspCommissionForCountry) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [selectedMerchantId, selectedCountryCode, assignments, channels, psps]);
 
   const onSubmit = (data: PaymentSimulationFormData) => {
     try {

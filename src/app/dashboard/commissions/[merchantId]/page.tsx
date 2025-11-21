@@ -409,6 +409,7 @@ export default function MerchantCommissionsPage() {
                   <TableHead>País</TableHead>
                   <TableHead>Canal</TableHead>
                   <TableHead>Estado</TableHead>
+                  <TableHead>Descripción</TableHead>
                   <TableHead>Vigencia</TableHead>
                   <TableHead>Comisión Merchant</TableHead>
                   <TableHead>PSP</TableHead>
@@ -419,7 +420,7 @@ export default function MerchantCommissionsPage() {
               <TableBody>
                 {filteredRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       <p className="text-muted-foreground">
                         No hay configuraciones que coincidan con el filtro
                       </p>
@@ -469,6 +470,15 @@ export default function MerchantCommissionsPage() {
                           <Badge variant="outline" className="text-gray-500">
                             Sin configurar
                           </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {row.description ? (
+                          <div className="text-sm max-w-xs truncate" title={row.description}>
+                            {row.description}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>

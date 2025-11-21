@@ -24,78 +24,96 @@ export class CommissionCalculatorService {
       );
     }
 
-    // 2. Calculate base commission (support both new and legacy models)
-    const assignment = assignments[0];
+    // 2. Calculate base commission by summing ALL active assignments
     let baseCommission: number = 0;
-    let percentage: number | null = null;
-    let fixedFee: number | null = null;
-    let type: "FIXED" | "PERCENTAGE" | "MIXED" = "FIXED";
+    let totalPercentage: number = 0;
+    let totalFixedFee: number = 0;
+    let hasPercentage = false;
+    let hasFixed = false;
 
-    if (assignment.basePercentageValue !== undefined || assignment.baseFixedValue !== undefined) {
-      // New model: direct values
-      // First check if there's a matching active commission range for this amount
-      let rangeFound = false;
+    // Sum all active commission assignments
+    for (const assignment of assignments) {
+      if (assignment.basePercentageValue !== undefined || assignment.baseFixedValue !== undefined) {
+        // New model: direct values
+        // First check if there's a matching active commission range for this amount
+        let rangeFound = false;
 
-      if (assignment.commissionRanges && assignment.commissionRanges.length > 0) {
-        const matchingRange = assignment.commissionRanges.find(range => {
-          const isInRange = simulation.amount >= range.minAmount && simulation.amount <= range.maxAmount;
-          // Only use active ranges (dates are inherited from parent assignment)
-          return isInRange && range.isActive;
-        });
+        if (assignment.commissionRanges && assignment.commissionRanges.length > 0) {
+          const matchingRange = assignment.commissionRanges.find(range => {
+            const isInRange = simulation.amount >= range.minAmount && simulation.amount <= range.maxAmount;
+            // Only use active ranges (dates are inherited from parent assignment)
+            return isInRange && range.isActive;
+          });
 
-        if (matchingRange) {
-          rangeFound = true;
-          const percentageComm = (matchingRange.percentageValue || 0) * simulation.amount;
-          const fixedComm = matchingRange.fixedValue || 0;
-          baseCommission = percentageComm + fixedComm;
-          percentage = matchingRange.percentageValue ?? null;
-          fixedFee = matchingRange.fixedValue ?? null;
+          if (matchingRange) {
+            rangeFound = true;
+            const percentageComm = (matchingRange.percentageValue || 0) * simulation.amount;
+            const fixedComm = matchingRange.fixedValue || 0;
+            baseCommission += percentageComm + fixedComm;
 
-          if (matchingRange.percentageValue && matchingRange.fixedValue) {
-            type = "MIXED";
-          } else if (matchingRange.percentageValue) {
-            type = "PERCENTAGE";
-          } else {
-            type = "FIXED";
+            if (matchingRange.percentageValue) {
+              totalPercentage += matchingRange.percentageValue;
+              hasPercentage = true;
+            }
+            if (matchingRange.fixedValue) {
+              totalFixedFee += matchingRange.fixedValue;
+              hasFixed = true;
+            }
           }
         }
-      }
 
-      // If no range found, use base values
-      if (!rangeFound) {
-        const percentageComm = (assignment.basePercentageValue || 0) * simulation.amount;
-        const fixedComm = assignment.baseFixedValue || 0;
-        baseCommission = percentageComm + fixedComm;
-        percentage = assignment.basePercentageValue ?? null;
-        fixedFee = assignment.baseFixedValue ?? null;
+        // If no range found, use base values
+        if (!rangeFound) {
+          const percentageComm = (assignment.basePercentageValue || 0) * simulation.amount;
+          const fixedComm = assignment.baseFixedValue || 0;
+          baseCommission += percentageComm + fixedComm;
 
-        if (assignment.basePercentageValue && assignment.baseFixedValue) {
-          type = "MIXED";
-        } else if (assignment.basePercentageValue) {
-          type = "PERCENTAGE";
-        } else {
-          type = "FIXED";
+          if (assignment.basePercentageValue) {
+            totalPercentage += assignment.basePercentageValue;
+            hasPercentage = true;
+          }
+          if (assignment.baseFixedValue) {
+            totalFixedFee += assignment.baseFixedValue;
+            hasFixed = true;
+          }
+        }
+      } else {
+        // Legacy model: template-based
+        const template = commissionTemplatesRepository.getById(
+          assignment.commissionTemplateId!
+        );
+        if (!template) {
+          throw new Error("Template de comisión no encontrado");
+        }
+
+        const parameters = commissionParametersRepository.getByTemplateId(
+          template.id
+        );
+
+        const result = this.calculateBaseCommission(simulation.amount, parameters);
+        baseCommission += result.baseCommission;
+
+        if (result.percentage) {
+          totalPercentage += result.percentage;
+          hasPercentage = true;
+        }
+        if (result.fixedFee) {
+          totalFixedFee += result.fixedFee;
+          hasFixed = true;
         }
       }
-    } else {
-      // Legacy model: template-based
-      const template = commissionTemplatesRepository.getById(
-        assignment.commissionTemplateId!
-      );
-      if (!template) {
-        throw new Error("Template de comisión no encontrado");
-      }
-
-      const parameters = commissionParametersRepository.getByTemplateId(
-        template.id
-      );
-
-      const result = this.calculateBaseCommission(simulation.amount, parameters);
-      baseCommission = result.baseCommission;
-      percentage = result.percentage;
-      fixedFee = result.fixedFee;
-      type = result.type;
     }
+
+    // Determine commission type
+    let type: "FIXED" | "PERCENTAGE" | "MIXED" = "FIXED";
+    if (hasPercentage && hasFixed) {
+      type = "MIXED";
+    } else if (hasPercentage) {
+      type = "PERCENTAGE";
+    }
+
+    const percentage = hasPercentage ? totalPercentage : null;
+    const fixedFee = hasFixed ? totalFixedFee : null;
 
     // 4. Obtener el canal para encontrar tanto el PSP asignado como los taxes
     const channel = channelsRepository.getByCode(simulation.channelCode);

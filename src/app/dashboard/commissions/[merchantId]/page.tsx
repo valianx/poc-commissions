@@ -26,7 +26,7 @@ import {
   XCircle,
   Filter,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface ConfigurationRow {
   countryCode: string;
@@ -42,6 +42,8 @@ interface ConfigurationRow {
   pspCommissionValue?: string;
   taxesCount: number;
   status?: string;
+  startDate?: string;
+  endDate?: string | null;
 }
 
 export default function MerchantCommissionsPage() {
@@ -171,17 +173,14 @@ export default function MerchantCommissionsPage() {
       configsForCountry.forEach((config) => {
         const channel = channels.find((ch) => ch.id === config.channelId);
         if (!channel) return;
-          const assignment = assignments.find(
+
+          // Get ALL assignments for this merchant, country, and channel (not just ACTIVE)
+          const channelAssignments = assignments.filter(
             (a) =>
               a.merchantId === merchantId &&
               a.countryCode === countryCode &&
-              a.channelCode === channel.code &&
-              a.status === "ACTIVE"
+              a.channelCode === channel.code
           );
-
-          const template = assignment && (assignment as any).commissionTemplateId
-            ? getTemplate((assignment as any).commissionTemplateId)
-            : null;
 
           // Get PSP info from merchant channel config
           const psp = psps.find((p) => p.id === config.pspId);
@@ -220,23 +219,44 @@ export default function MerchantCommissionsPage() {
             }
           }
 
-        rows.push({
-          countryCode,
-          channelCode: channel.code,
-          channelName: channel.name,
-          isConfigured: !!assignment,
-          assignmentId: assignment?.id,
-          templateId: (assignment as any)?.commissionTemplateId,
-          templateName: template?.name,
-          templateType: template?.type,
-          commissionValue: assignment
-            ? renderCommissionValue(assignment)
-            : undefined,
-          pspName: psp?.name,
-          pspCommissionValue,
-          taxesCount: taxes.length,
-          status: config.isActive ? assignment?.status : "INACTIVE",
-        });
+          // If there are assignments, create a row for each one
+          if (channelAssignments.length > 0) {
+            channelAssignments.forEach((assignment) => {
+              const template = (assignment as any).commissionTemplateId
+                ? getTemplate((assignment as any).commissionTemplateId)
+                : null;
+
+              rows.push({
+                countryCode,
+                channelCode: channel.code,
+                channelName: channel.name,
+                isConfigured: true,
+                assignmentId: assignment.id,
+                templateId: (assignment as any)?.commissionTemplateId,
+                templateName: template?.name,
+                templateType: template?.type,
+                commissionValue: renderCommissionValue(assignment),
+                pspName: psp?.name,
+                pspCommissionValue,
+                taxesCount: taxes.length,
+                status: config.isActive ? assignment.status : "INACTIVE",
+                startDate: assignment.startDate,
+                endDate: assignment.endDate,
+              });
+            });
+          } else {
+            // No assignments, show as unconfigured
+            rows.push({
+              countryCode,
+              channelCode: channel.code,
+              channelName: channel.name,
+              isConfigured: false,
+              pspName: psp?.name,
+              pspCommissionValue,
+              taxesCount: taxes.length,
+              status: config.isActive ? "UNCONFIGURED" : "INACTIVE",
+            });
+          }
       });
     });
 
@@ -453,6 +473,7 @@ export default function MerchantCommissionsPage() {
                   <TableHead>País</TableHead>
                   <TableHead>Canal</TableHead>
                   <TableHead>Estado</TableHead>
+                  <TableHead>Vigencia</TableHead>
                   <TableHead>Comisión Merchant</TableHead>
                   <TableHead>Template</TableHead>
                   <TableHead>PSP</TableHead>
@@ -464,7 +485,7 @@ export default function MerchantCommissionsPage() {
               <TableBody>
                 {filteredRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8">
+                    <TableCell colSpan={10} className="text-center py-8">
                       <p className="text-muted-foreground">
                         No hay configuraciones que coincidan con el filtro
                       </p>
@@ -495,6 +516,26 @@ export default function MerchantCommissionsPage() {
                             <XCircle className="h-4 w-4" />
                             <span className="text-sm font-medium">Sin configurar</span>
                           </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {row.startDate ? (
+                          <div className="text-sm">
+                            <div className="font-medium">
+                              {formatDate(row.startDate)}
+                            </div>
+                            {row.endDate ? (
+                              <div className="text-xs text-muted-foreground">
+                                hasta {formatDate(row.endDate)}
+                              </div>
+                            ) : (
+                              <div className="text-xs text-muted-foreground">
+                                Indefinido
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
                         )}
                       </TableCell>
                       <TableCell>

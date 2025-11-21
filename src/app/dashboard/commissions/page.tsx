@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useCommissionsStore } from "@/lib/stores/commissions.store";
 import { useMerchantsStore } from "@/lib/stores/merchants.store";
 import { useChannelsStore } from "@/lib/stores/channels.store";
+import { useMerchantChannelConfigStore } from "@/lib/stores/merchant-channel-config.store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -31,29 +32,46 @@ export default function CommissionsPage() {
   const { assignments, fetchAssignments } = useCommissionsStore();
   const { merchants, fetchMerchants } = useMerchantsStore();
   const { channels, fetchChannels } = useChannelsStore();
+  const { configs, fetchConfigs, getConfigsByMerchant } = useMerchantChannelConfigStore();
 
   useEffect(() => {
     fetchMerchants();
     fetchChannels();
     fetchAssignments();
-  }, [fetchMerchants, fetchChannels, fetchAssignments]);
+    fetchConfigs();
+  }, [fetchMerchants, fetchChannels, fetchAssignments, fetchConfigs]);
 
   // Generate merchant rows
   const generateMerchantRows = (): MerchantRow[] => {
     return merchants
       .filter((m) => m.isActive)
       .map((merchant) => {
+        // Get merchant's configured channels (MerchantChannelConfig entries)
+        const merchantChannelConfigs = getConfigsByMerchant(merchant.id).filter(
+          (config) => config.isActive
+        );
+
+        // Total configurations = number of active MerchantChannelConfig entries
+        const totalConfigurations = merchantChannelConfigs.length;
+
+        // Get active commission assignments for this merchant
         const merchantAssignments = assignments.filter(
           (a) => a.merchantId === merchant.id && a.status === "ACTIVE"
         );
 
-        const activeChannelsCount = channels.filter((c) => c.isActive).length;
-        const totalConfigurations = merchant.countries.length * activeChannelsCount;
+        // Count how many of the configured channels have commission assignments
+        const configuredCount = merchantChannelConfigs.filter((config) => {
+          return merchantAssignments.some(
+            (assignment) =>
+              assignment.countryCode === config.countryCode &&
+              assignment.channelCode === channels.find((ch) => ch.id === config.channelId)?.code
+          );
+        }).length;
 
         return {
           merchant,
           totalConfigurations,
-          configuredCount: merchantAssignments.length,
+          configuredCount,
           countries: merchant.countries,
         };
       });

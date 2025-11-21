@@ -317,31 +317,55 @@ export function seedDatabase() {
 
   // Create commission assignments
   const assignments: CommissionAssignment[] = [
+    // 1XBET - Chile - Webpay - WITH VAT
     {
       id: uuidv4(),
-      commissionTemplateId: templates[0].id,
-      merchantId: merchants[0].id,
+      merchantId: merchants[0].id, // 1XBET
       countryCode: "CL",
       channelCode: "webpay",
+      description: "Comisión estándar para Chile con IVA incluido",
+      basePercentageValue: 0.025, // 2.5% base
+      baseFixedValue: null,
+      vatPercentage: 0.19, // 19% VAT
       startDate: new Date().toISOString(),
       endDate: null,
       status: "ACTIVE",
       assignedBy: "admin@zippy.com",
       createdAt: new Date().toISOString(),
-      vatPercentage: 0.19, // 19% VAT for 1XBET Chile
     },
+    // 1XBET - Brazil - PIX - NO VAT
     {
       id: uuidv4(),
-      commissionTemplateId: templates[1].id,
-      merchantId: merchants[0].id,
+      merchantId: merchants[0].id, // 1XBET
       countryCode: "BR",
       channelCode: "pix",
+      description: "Comisión para transacciones PIX en Brasil",
+      basePercentageValue: 0.02, // 2% base
+      baseFixedValue: 50, // R$ 50 fijo
+      vatPercentage: null, // Sin VAT
       startDate: new Date().toISOString(),
       endDate: null,
       status: "ACTIVE",
       assignedBy: "admin@zippy.com",
       createdAt: new Date().toISOString(),
     },
+    // 1XBET - Peru - Credit Card - NO VAT
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id, // 1XBET
+      countryCode: "PE",
+      channelCode: "credit_card",
+      description: "Comisión para tarjetas de crédito en Perú",
+      basePercentageValue: 0.03, // 3% base
+      baseFixedValue: null,
+      vatPercentage: null, // Sin VAT
+      startDate: new Date().toISOString(),
+      endDate: null,
+      status: "ACTIVE",
+      assignedBy: "admin@zippy.com",
+      createdAt: new Date().toISOString(),
+    },
+    // BetWarrior - Chile - Credit Card
     {
       id: uuidv4(),
       commissionTemplateId: templates[0].id,
@@ -427,46 +451,40 @@ export function seedDatabase() {
 
   // Create merchant channel configurations
   const merchantChannelConfigs: MerchantChannelConfig[] = [
-    // 1XBET configurations
+    // 1XBET - Chile - Webpay - Transbank
     {
       id: uuidv4(),
       merchantId: merchants[0].id, // 1XBET
       countryCode: "CL",
       channelId: channels.find((c) => c.code === "webpay")!.id,
       pspId: psps[2].id, // Transbank
-      taxes: [
-        {
-          taxCode: "IVA",
-          taxName: "Impuesto al Valor Agregado",
-          rate: 0.19,
-          isActive: true,
-        },
-      ],
+      taxes: [],
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,
     },
+    // 1XBET - Brazil - PIX - MercadoPago
     {
       id: uuidv4(),
       merchantId: merchants[0].id, // 1XBET
       countryCode: "BR",
       channelId: channels.find((c) => c.code === "pix")!.id,
       pspId: psps[1].id, // MercadoPago
-      taxes: [
-        {
-          taxCode: "ICMS",
-          taxName: "Imposto sobre Circulação de Mercadorias e Serviços",
-          rate: 0.18,
-          isActive: true,
-        },
-        {
-          taxCode: "PIS",
-          taxName: "Programa de Integração Social",
-          rate: 0.0165,
-          isActive: true,
-        },
-      ],
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    // 1XBET - Peru - Credit Card - PayU
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id, // 1XBET
+      countryCode: "PE",
+      channelId: channels.find((c) => c.code === "credit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

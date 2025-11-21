@@ -184,6 +184,7 @@ export default function ChannelsPage() {
                   <TableRow>
                     <TableHead>Nombre</TableHead>
                     <TableHead>Código</TableHead>
+                    <TableHead>Comisiones</TableHead>
                     <TableHead>Estado</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
@@ -192,7 +193,7 @@ export default function ChannelsPage() {
                   {psps.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={4}
+                        colSpan={5}
                         className="text-center text-muted-foreground"
                       >
                         No hay PSPs registrados
@@ -206,6 +207,11 @@ export default function ChannelsPage() {
                           <code className="rounded bg-gray-100 px-2 py-1 text-sm">
                             {psp.code}
                           </code>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {psp.commissionsByCountry?.length || 0} países
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={psp.isActive ? "success" : "destructive"}>

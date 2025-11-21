@@ -109,7 +109,7 @@ export default function EditPSPPage() {
     );
   }
 
-  const onSubmit = async (data: EditPSPFormData) => {
+  const onSubmit = (data: EditPSPFormData) => {
     try {
       const processedCommissions = commissions.map(c => ({
         countryCode: c.countryCode,
@@ -122,12 +122,15 @@ export default function EditPSPPage() {
           : null,
       }));
 
-      await updatePSP(pspId, {
+      updatePSP(pspId, {
         name: data.name,
         code: data.code,
         isActive: data.isActive,
         commissionsByCountry: processedCommissions,
       });
+
+      // Refetch to ensure we have the latest data
+      fetchPSPs();
 
       router.push("/dashboard/channels");
     } catch (error) {

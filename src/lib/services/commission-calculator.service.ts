@@ -119,14 +119,24 @@ export class CommissionCalculatorService {
         );
 
         const result = this.calculateBaseCommission(simulation.amount, parameters);
-        totalCommission += result.baseCommission;
+
+        // Apply VAT if configured for this legacy assignment
+        const vat = assignment.vatPercentage || 0;
+        const vatAmount = result.baseCommission * vat;
+        const totalForThisAssignment = result.baseCommission + vatAmount;
+
+        totalBaseCommission += result.baseCommission;
+        totalVATAmount += vatAmount;
+        totalCommission += totalForThisAssignment;
 
         if (result.percentage) {
-          totalPercentage += result.percentage;
+          const effectivePercentage = result.percentage * (1 + vat);
+          totalPercentage += effectivePercentage;
           hasPercentage = true;
         }
         if (result.fixedFee) {
-          totalFixedFee += result.fixedFee;
+          const effectiveFixed = result.fixedFee * (1 + vat);
+          totalFixedFee += effectiveFixed;
           hasFixed = true;
         }
       }

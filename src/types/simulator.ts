@@ -15,10 +15,11 @@ export interface TaxBreakdown {
 
 export interface CommissionBreakdown {
   type: "FIXED" | "PERCENTAGE" | "MIXED";
-  baseAmount: number;
+  baseAmount: number; // Commission before VAT
+  vatAmount: number; // VAT applied to commission
   percentage?: number;
   fixedFee?: number;
-  subtotal: number;
+  subtotal: number; // Total commission (baseAmount + vatAmount)
 }
 
 export interface PSPCommissionBreakdown {

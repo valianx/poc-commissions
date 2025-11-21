@@ -288,6 +288,29 @@ export function PaymentSimulator() {
               <div className="space-y-1 border-l-2 border-blue-500 pl-4">
                 <div className="flex justify-between text-sm">
                   <span>Tipo: {result.merchantCommission.type}</span>
+                </div>
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Comisión Base</span>
+                  <span className="font-mono">
+                    {formatCurrency(
+                      result.merchantCommission.baseAmount,
+                      result.currency
+                    )}
+                  </span>
+                </div>
+                {result.merchantCommission.vatAmount > 0 && (
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>VAT/IVA</span>
+                    <span className="font-mono">
+                      {formatCurrency(
+                        result.merchantCommission.vatAmount,
+                        result.currency
+                      )}
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t pt-1 font-semibold">
+                  <span>Total Comisión</span>
                   <span className="font-mono">
                     {formatCurrency(
                       result.merchantCommission.subtotal,
@@ -296,21 +319,8 @@ export function PaymentSimulator() {
                   </span>
                 </div>
                 {result.merchantCommission.percentage && (
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>
-                      Porcentaje ({(result.merchantCommission.percentage * 100).toFixed(2)}%)
-                    </span>
-                  </div>
-                )}
-                {result.merchantCommission.fixedFee && (
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>Tarifa Fija</span>
-                    <span className="font-mono">
-                      {formatCurrency(
-                        result.merchantCommission.fixedFee,
-                        result.currency
-                      )}
-                    </span>
+                  <div className="mt-2 text-xs text-gray-500">
+                    Tarifa efectiva: {(result.merchantCommission.percentage * 100).toFixed(2)}%
                   </div>
                 )}
               </div>
@@ -405,7 +415,7 @@ export function PaymentSimulator() {
                     {formatCurrency(result.zippyRevenue, result.currency)}
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
-                    (Comisión + Impuestos + PSP)
+                    (Comisión + VAT + PSP)
                   </p>
                 </div>
 
@@ -426,7 +436,7 @@ export function PaymentSimulator() {
                   {formatCurrency(result.zippyNetProfit, result.currency)}
                 </p>
                 <p className="mt-1 text-xs text-gray-500">
-                  (Comisión Zippy + Impuestos)
+                  (Comisión Zippy + VAT)
                 </p>
               </div>
 
@@ -442,7 +452,7 @@ export function PaymentSimulator() {
                     </span>
                   </div>
                   <div className="flex justify-between text-red-600">
-                    <span>- Comisión Zippy (+ impuestos)</span>
+                    <span>- Comisión Zippy (+ VAT)</span>
                     <span className="font-mono">
                       -{formatCurrency(result.totalMerchantCommission, result.currency)}
                     </span>

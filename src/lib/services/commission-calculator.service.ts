@@ -27,6 +27,8 @@ export class CommissionCalculatorService {
     // 2. Calculate total commission from ALL active assignments
     // Each assignment now includes its own VAT percentage
     let totalCommission: number = 0;
+    let totalBaseCommission: number = 0; // Track base commission separately
+    let totalVATAmount: number = 0; // Track VAT separately
     let totalPercentage: number = 0;
     let totalFixedFee: number = 0;
     let hasPercentage = false;
@@ -57,6 +59,8 @@ export class CommissionCalculatorService {
             const vatAmount = baseForThisRange * vat;
             const totalForThisRange = baseForThisRange + vatAmount;
 
+            totalBaseCommission += baseForThisRange;
+            totalVATAmount += vatAmount;
             totalCommission += totalForThisRange;
 
             if (matchingRange.percentageValue) {
@@ -84,6 +88,8 @@ export class CommissionCalculatorService {
           const vatAmount = baseForThisAssignment * vat;
           const totalForThisAssignment = baseForThisAssignment + vatAmount;
 
+          totalBaseCommission += baseForThisAssignment;
+          totalVATAmount += vatAmount;
           totalCommission += totalForThisAssignment;
 
           if (assignment.basePercentageValue) {
@@ -213,7 +219,8 @@ export class CommissionCalculatorService {
       currency: simulation.currency,
       merchantCommission: {
         type,
-        baseAmount: totalCommission, // Total commission including VAT
+        baseAmount: totalBaseCommission, // Commission before VAT
+        vatAmount: totalVATAmount, // VAT amount
         percentage: percentage ?? undefined,
         fixedFee: fixedFee ?? undefined,
         subtotal: totalCommission, // Total commission (base + VAT)

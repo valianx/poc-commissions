@@ -10,7 +10,6 @@ import { Plus, Edit, Trash2, X } from "lucide-react";
 import { useMerchantChannelConfigStore } from "@/lib/stores/merchant-channel-config.store";
 import { useChannelsStore } from "@/lib/stores/channels.store";
 import { Merchant } from "@/types/merchant";
-import { ChannelTax } from "@/types/merchant-channel-config";
 
 const COUNTRIES = [
   { code: "CL", name: "Chile" },
@@ -44,12 +43,6 @@ export function MerchantChannelConfig({
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedChannel, setSelectedChannel] = useState("");
   const [selectedPSP, setSelectedPSP] = useState("");
-  const [taxes, setTaxes] = useState<ChannelTax[]>([]);
-
-  // Tax form state
-  const [taxCode, setTaxCode] = useState("");
-  const [taxName, setTaxName] = useState("");
-  const [taxRate, setTaxRate] = useState("");
 
   useEffect(() => {
     fetchConfigs();
@@ -77,33 +70,6 @@ export function MerchantChannelConfig({
       .filter((psp) => psp !== undefined);
   };
 
-  const handleAddTax = () => {
-    if (!taxCode || !taxName || !taxRate) {
-      alert("Debe completar todos los campos del impuesto");
-      return;
-    }
-
-    const rate = parseFloat(taxRate);
-    if (isNaN(rate) || rate < 0 || rate > 1) {
-      alert("La tasa debe ser un número entre 0 y 1 (ej: 0.19 para 19%)");
-      return;
-    }
-
-    // Check if tax code already exists
-    if (taxes.some((t) => t.taxCode === taxCode)) {
-      alert("Ya existe un impuesto con este código");
-      return;
-    }
-
-    setTaxes([...taxes, { taxCode, taxName, rate, isActive: true }]);
-    setTaxCode("");
-    setTaxName("");
-    setTaxRate("");
-  };
-
-  const handleRemoveTax = (taxCode: string) => {
-    setTaxes(taxes.filter((t) => t.taxCode !== taxCode));
-  };
 
   const handleAddConfig = () => {
     if (!selectedCountry || !selectedChannel || !selectedPSP) {
@@ -127,14 +93,13 @@ export function MerchantChannelConfig({
       countryCode: selectedCountry,
       channelId: selectedChannel,
       pspId: selectedPSP,
-      taxes: taxes,
+      taxes: [],
       isActive: true,
     });
 
     setSelectedCountry("");
     setSelectedChannel("");
     setSelectedPSP("");
-    setTaxes([]);
     setIsAdding(false);
   };
 
@@ -145,7 +110,6 @@ export function MerchantChannelConfig({
       setSelectedCountry(config.countryCode);
       setSelectedChannel(config.channelId);
       setSelectedPSP(config.pspId);
-      setTaxes(config.taxes || []);
     }
   };
 
@@ -159,14 +123,13 @@ export function MerchantChannelConfig({
 
     updateConfig(editingConfigId, {
       pspId: selectedPSP,
-      taxes: taxes,
+      taxes: [],
     });
 
     setEditingConfigId(null);
     setSelectedCountry("");
     setSelectedChannel("");
     setSelectedPSP("");
-    setTaxes([]);
   };
 
   const handleCancelEdit = () => {
@@ -174,7 +137,6 @@ export function MerchantChannelConfig({
     setSelectedCountry("");
     setSelectedChannel("");
     setSelectedPSP("");
-    setTaxes([]);
   };
 
   const handleToggleConfig = (configId: string) => {
@@ -300,93 +262,6 @@ export function MerchantChannelConfig({
                 </div>
               </div>
 
-              {/* Taxes Section */}
-              <div className="mt-6 space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-semibold">Impuestos (VAT, etc.)</Label>
-                </div>
-
-                {/* Add Tax Form */}
-                <div className="grid gap-3 md:grid-cols-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="taxCode">Código</Label>
-                    <Input
-                      id="taxCode"
-                      value={taxCode}
-                      onChange={(e) => setTaxCode(e.target.value)}
-                      placeholder="VAT, IVA, etc."
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="taxName">Nombre</Label>
-                    <Input
-                      id="taxName"
-                      value={taxName}
-                      onChange={(e) => setTaxName(e.target.value)}
-                      placeholder="Impuesto al Valor Agregado"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="taxRate">Tasa (0-1)</Label>
-                    <Input
-                      id="taxRate"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      max="1"
-                      value={taxRate}
-                      onChange={(e) => setTaxRate(e.target.value)}
-                      placeholder="0.19"
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleAddTax}
-                      className="w-full"
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Agregar
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Tax List */}
-                {taxes.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="text-sm text-muted-foreground">
-                      Impuestos agregados:
-                    </Label>
-                    {taxes.map((tax) => (
-                      <div
-                        key={tax.taxCode}
-                        className="flex items-center justify-between rounded-md border bg-white p-3"
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium">
-                            {tax.taxCode} - {tax.taxName}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Tasa: {(tax.rate * 100).toFixed(2)}%
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveTax(tax.taxCode)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               <div className="mt-4 flex justify-end gap-2">
                 <Button
                   variant="outline"
@@ -396,10 +271,6 @@ export function MerchantChannelConfig({
                     setSelectedCountry("");
                     setSelectedChannel("");
                     setSelectedPSP("");
-                    setTaxes([]);
-                    setTaxCode("");
-                    setTaxName("");
-                    setTaxRate("");
                   }}
                 >
                   Cancelar
@@ -461,95 +332,6 @@ export function MerchantChannelConfig({
                           </div>
                         </div>
 
-                        {/* Taxes Section - Edit Mode */}
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-base font-semibold">
-                              Impuestos (VAT, etc.)
-                            </Label>
-                          </div>
-
-                          {/* Add Tax Form */}
-                          <div className="grid gap-3 md:grid-cols-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="edit-taxCode">Código</Label>
-                              <Input
-                                id="edit-taxCode"
-                                value={taxCode}
-                                onChange={(e) => setTaxCode(e.target.value)}
-                                placeholder="VAT, IVA, etc."
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="edit-taxName">Nombre</Label>
-                              <Input
-                                id="edit-taxName"
-                                value={taxName}
-                                onChange={(e) => setTaxName(e.target.value)}
-                                placeholder="Impuesto al Valor Agregado"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="edit-taxRate">Tasa (0-1)</Label>
-                              <Input
-                                id="edit-taxRate"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                max="1"
-                                value={taxRate}
-                                onChange={(e) => setTaxRate(e.target.value)}
-                                placeholder="0.19"
-                              />
-                            </div>
-                            <div className="flex items-end">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={handleAddTax}
-                                className="w-full"
-                              >
-                                <Plus className="mr-2 h-4 w-4" />
-                                Agregar
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* Tax List */}
-                          {taxes.length > 0 && (
-                            <div className="space-y-2">
-                              <Label className="text-sm text-muted-foreground">
-                                Impuestos agregados:
-                              </Label>
-                              {taxes.map((tax) => (
-                                <div
-                                  key={tax.taxCode}
-                                  className="flex items-center justify-between rounded-md border bg-white p-3"
-                                >
-                                  <div className="flex-1">
-                                    <p className="font-medium">
-                                      {tax.taxCode} - {tax.taxName}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                      Tasa: {(tax.rate * 100).toFixed(2)}%
-                                    </p>
-                                  </div>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRemoveTax(tax.taxCode)}
-                                    className="text-red-500 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
                         <div className="flex justify-end gap-2">
                           <Button
                             variant="outline"
@@ -583,23 +365,6 @@ export function MerchantChannelConfig({
                         <p className="text-sm text-muted-foreground">
                           PSP: {getPSPName(config.pspId)}
                         </p>
-
-                        {/* Display Taxes */}
-                        {config.taxes && config.taxes.length > 0 && (
-                          <div className="mt-2 space-y-1">
-                            <p className="text-xs font-medium text-gray-600">
-                              Impuestos:
-                            </p>
-                            {config.taxes.map((tax) => (
-                              <div
-                                key={tax.taxCode}
-                                className="text-xs text-muted-foreground"
-                              >
-                                • {tax.taxCode} - {tax.taxName}: {(tax.rate * 100).toFixed(2)}%
-                              </div>
-                            ))}
-                          </div>
-                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button

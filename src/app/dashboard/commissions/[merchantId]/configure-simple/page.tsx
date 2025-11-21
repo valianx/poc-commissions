@@ -54,12 +54,13 @@ export default function ConfigureSimpleCommissionPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const merchantId = params.merchantId as string;
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Get pre-selected values from URL params
   const preSelectedCountry = searchParams.get("country");
   const preSelectedChannel = searchParams.get("channel");
 
-  const { createAssignment } = useCommissionsStore();
+  const { createAssignment, fetchAssignments } = useCommissionsStore();
   const { merchants, fetchMerchants } = useMerchantsStore();
   const { channels, fetchChannels } = useChannelsStore();
   const { fetchConfigs, getConfigsByMerchant } =
@@ -138,8 +139,10 @@ export default function ConfigureSimpleCommissionPage() {
     );
   }
 
-  const onSubmit = async (data: ConfigureSimpleCommissionFormData) => {
+  const onSubmit = (data: ConfigureSimpleCommissionFormData) => {
     try {
+      setSaveError(null);
+
       // Process commission ranges (no dates, only isActive)
       const processedRanges = data.commissionRanges?.map(range => ({
         id: uuidv4(),
@@ -164,7 +167,7 @@ export default function ConfigureSimpleCommissionPage() {
         status = "SCHEDULED";
       }
 
-      await createAssignment({
+      createAssignment({
         merchantId,
         countryCode: data.countryCode,
         channelCode: data.channelCode,
@@ -181,9 +184,13 @@ export default function ConfigureSimpleCommissionPage() {
         assignedBy: data.assignedBy,
       });
 
+      // Refetch to ensure we have the latest data
+      fetchAssignments();
+
       router.push(`/dashboard/commissions/${merchantId}`);
     } catch (error) {
       console.error("Error creating commission assignment:", error);
+      setSaveError(error instanceof Error ? error.message : "Error al guardar la comisión");
     }
   };
 
@@ -550,6 +557,20 @@ export default function ConfigureSimpleCommissionPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Error Message */}
+        {saveError && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 text-red-800">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm font-medium">{saveError}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Actions */}
         <div className="flex justify-end gap-4">

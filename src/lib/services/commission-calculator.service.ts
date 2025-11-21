@@ -122,8 +122,18 @@ export class CommissionCalculatorService {
 
         // Apply VAT if configured for this legacy assignment
         const vat = assignment.vatPercentage || 0;
+        console.log("[CALCULATOR DEBUG] Legacy assignment:", {
+          assignmentId: assignment.id,
+          vatPercentage: assignment.vatPercentage,
+          vat,
+          baseCommission: result.baseCommission,
+        });
         const vatAmount = result.baseCommission * vat;
         const totalForThisAssignment = result.baseCommission + vatAmount;
+        console.log("[CALCULATOR DEBUG] Calculated VAT:", {
+          vatAmount,
+          totalForThisAssignment,
+        });
 
         totalBaseCommission += result.baseCommission;
         totalVATAmount += vatAmount;

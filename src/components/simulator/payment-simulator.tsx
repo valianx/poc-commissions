@@ -18,6 +18,7 @@ import { useCommissionsStore } from "@/lib/stores/commissions.store";
 import { commissionCalculator } from "@/lib/services/commission-calculator.service";
 import { SimulationResult } from "@/types/simulator";
 import { formatCurrency } from "@/lib/utils";
+import { getCurrencyForCountry } from "@/lib/utils/currency";
 import { AlertCircle } from "lucide-react";
 
 export function PaymentSimulator() {
@@ -39,6 +40,7 @@ export function PaymentSimulator() {
     handleSubmit,
     formState: { errors },
     watch,
+    setValue,
   } = useForm<PaymentSimulationFormData>({
     resolver: zodResolver(paymentSimulationSchema),
     defaultValues: {
@@ -51,6 +53,16 @@ export function PaymentSimulator() {
   const selectedMerchantId = watch("merchantId");
   const selectedCountryCode = watch("countryCode");
   const selectedMerchant = merchants.find((m) => m.id === selectedMerchantId);
+
+  // Auto-update currency when country changes
+  useEffect(() => {
+    if (selectedCountryCode) {
+      const currency = getCurrencyForCountry(selectedCountryCode);
+      if (currency) {
+        setValue("currency", currency);
+      }
+    }
+  }, [selectedCountryCode, setValue]);
 
   // Get countries that have at least one active commission configured
   const availableCountries = useMemo(() => {
@@ -241,13 +253,14 @@ export function PaymentSimulator() {
                 <select
                   id="currency"
                   {...register("currency")}
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="flex h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm shadow-sm transition-colors cursor-not-allowed"
+                  disabled={true}
                 >
-                  <option value="CLP">CLP</option>
-                  <option value="BRL">BRL</option>
-                  <option value="USD">USD</option>
-                  <option value="PEN">PEN</option>
+                  <option value={watch("currency")}>{watch("currency")}</option>
                 </select>
+                <p className="text-xs text-muted-foreground">
+                  La moneda se selecciona automáticamente según el país
+                </p>
                 {errors.currency && (
                   <p className="text-sm text-red-500">
                     {errors.currency.message}

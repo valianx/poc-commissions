@@ -10,7 +10,12 @@
       "Bash(git branch:*)",
       "Bash(git push:*)",
       "Bash(pnpm build:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(taskkill:*)",
+      "Bash(nul)",
+      "Bash(rd /s /q .next 2)",
+      "Bash(pnpm dev)",
+      "Bash(del nul)"
     ],
     "deny": [],
     "ask": []

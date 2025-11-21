@@ -328,6 +328,7 @@ export function seedDatabase() {
       status: "ACTIVE",
       assignedBy: "admin@zippy.com",
       createdAt: new Date().toISOString(),
+      vatPercentage: 0.19, // 19% VAT for 1XBET Chile
     },
     {
       id: uuidv4(),

@@ -454,16 +454,35 @@ export default function MerchantCommissionsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {row.isConfigured ? (
-                          <div className="flex items-center gap-1 text-green-600">
-                            <CheckCircle2 className="h-4 w-4" />
-                            <span className="text-sm font-medium">Configurada</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 text-orange-600">
-                            <XCircle className="h-4 w-4" />
-                            <span className="text-sm font-medium">Sin configurar</span>
-                          </div>
+                        {row.status === "ACTIVE" && (
+                          <Badge variant="default" className="bg-green-600">
+                            Activo
+                          </Badge>
+                        )}
+                        {row.status === "SCHEDULED" && (
+                          <Badge variant="default" className="bg-blue-600">
+                            Programado
+                          </Badge>
+                        )}
+                        {row.status === "EXPIRED" && (
+                          <Badge variant="default" className="bg-gray-600">
+                            Expirado
+                          </Badge>
+                        )}
+                        {row.status === "CANCELLED" && (
+                          <Badge variant="default" className="bg-red-600">
+                            Cancelado
+                          </Badge>
+                        )}
+                        {row.status === "INACTIVE" && (
+                          <Badge variant="outline" className="text-orange-600">
+                            Inactivo
+                          </Badge>
+                        )}
+                        {row.status === "UNCONFIGURED" && (
+                          <Badge variant="outline" className="text-gray-500">
+                            Sin configurar
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell>

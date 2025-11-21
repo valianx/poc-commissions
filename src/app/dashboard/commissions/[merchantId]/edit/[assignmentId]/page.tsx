@@ -20,6 +20,7 @@ const editCommissionSchema = z.object({
   // Assignment dates
   startDate: z.string().min(1, "Fecha de inicio requerida"),
   endDate: z.string().optional(),
+  status: z.enum(["ACTIVE", "SCHEDULED", "EXPIRED", "CANCELLED"]),
   basePercentageValue: z.string().optional(),
   baseFixedValue: z.string().optional(),
   assignedBy: z.string().email("Debe ser un email válido"),
@@ -75,6 +76,7 @@ export default function EditCommissionPage() {
   } = useForm<EditCommissionFormData>({
     resolver: zodResolver(editCommissionSchema),
     defaultValues: {
+      status: "ACTIVE",
       basePercentageValue: "",
       baseFixedValue: "",
       assignedBy: "admin@zippy.com",
@@ -91,6 +93,7 @@ export default function EditCommissionPage() {
   useEffect(() => {
     if (assignment) {
       reset({
+        status: assignment.status || "ACTIVE",
         basePercentageValue: assignment.basePercentageValue
           ? (assignment.basePercentageValue * 100).toString()
           : "",
@@ -148,25 +151,11 @@ export default function EditCommissionPage() {
         isActive: true, // Keep ranges active by default when editing
       })) || [];
 
-      // Calculate status based on dates
-      const startDate = data.startDate;
-      const now = new Date();
-      const start = new Date(startDate);
-      let status: "ACTIVE" | "SCHEDULED" | "EXPIRED" | "CANCELLED" = assignment?.status || "ACTIVE";
-
-      // Only recalculate if not manually cancelled
-      if (status !== "CANCELLED") {
-        if (start > now) {
-          status = "SCHEDULED";
-        } else if (data.endDate && new Date(data.endDate) < now) {
-          status = "EXPIRED";
-        } else {
-          status = "ACTIVE";
-        }
-      }
+      // Use the status from the form (manually set by user)
+      const status = data.status;
 
       await updateAssignment(assignmentId, {
-        startDate,
+        startDate: data.startDate,
         endDate: data.endDate || null,
         basePercentageValue: data.basePercentageValue
           ? parseFloat(data.basePercentageValue) / 100
@@ -224,9 +213,24 @@ export default function EditCommissionPage() {
                 <p className="text-sm text-muted-foreground">Canal</p>
                 <p className="font-medium">{channel?.name || assignment.channelCode}</p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Estado</p>
-                <p className="font-medium">{assignment.status}</p>
+              <div className="space-y-2">
+                <Label htmlFor="status">Estado *</Label>
+                <select
+                  id="status"
+                  {...register("status")}
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="ACTIVE">Activo</option>
+                  <option value="SCHEDULED">Programado</option>
+                  <option value="EXPIRED">Expirado</option>
+                  <option value="CANCELLED">Cancelado</option>
+                </select>
+                {errors.status && (
+                  <p className="text-sm text-red-500">{errors.status.message}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Cambie manualmente el estado de la comisión
+                </p>
               </div>
             </div>
           </CardContent>

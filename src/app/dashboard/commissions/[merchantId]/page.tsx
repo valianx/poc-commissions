@@ -411,7 +411,7 @@ export default function MerchantCommissionsPage() {
                   <TableHead>Estado</TableHead>
                   <TableHead>Descripción</TableHead>
                   <TableHead>Vigencia</TableHead>
-                  <TableHead>Comisión Merchant</TableHead>
+                  <TableHead>Comisión Zippy</TableHead>
                   <TableHead>PSP</TableHead>
                   <TableHead>Comisión PSP</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>

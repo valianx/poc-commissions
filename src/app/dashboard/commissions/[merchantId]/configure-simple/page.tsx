@@ -20,6 +20,9 @@ import { v4 as uuidv4 } from "uuid";
 const configureSimpleCommissionSchema = z.object({
   countryCode: z.string().length(2, "Código de país inválido"),
   channelCode: z.string().min(1, "Debe seleccionar un canal"),
+  // Assignment dates (required)
+  startDate: z.string().min(1, "Fecha de inicio requerida"),
+  endDate: z.string().optional(),
   basePercentageValue: z.string().optional(),
   baseFixedValue: z.string().optional(),
   assignedBy: z.string().email("Debe ser un email válido"),
@@ -28,14 +31,19 @@ const configureSimpleCommissionSchema = z.object({
     maxAmount: z.string().min(1, "Monto máximo requerido"),
     percentageValue: z.string().optional(),
     fixedValue: z.string().optional(),
-    startDate: z.string().min(1, "Fecha de inicio requerida"),
-    endDate: z.string().min(1, "Fecha de fin requerida"),
+    // Ranges don't have dates, only isActive flag
   })).optional(),
 }).refine(
   (data) => data.basePercentageValue || data.baseFixedValue,
   {
     message: "Debe especificar al menos un valor de comisión (porcentaje o fijo)",
     path: ["basePercentageValue"],
+  }
+).refine(
+  (data) => !data.endDate || new Date(data.startDate) < new Date(data.endDate),
+  {
+    message: "La fecha de fin debe ser posterior a la fecha de inicio",
+    path: ["endDate"],
   }
 );
 
@@ -76,6 +84,8 @@ export default function ConfigureSimpleCommissionPage() {
     defaultValues: {
       countryCode: preSelectedCountry || "",
       channelCode: preSelectedChannel || "",
+      startDate: new Date().toISOString().split('T')[0], // Today's date
+      endDate: "",
       assignedBy: "admin@zippy.com",
       commissionRanges: [],
     },
@@ -130,7 +140,7 @@ export default function ConfigureSimpleCommissionPage() {
 
   const onSubmit = async (data: ConfigureSimpleCommissionFormData) => {
     try {
-      // Process commission ranges
+      // Process commission ranges (no dates, only isActive)
       const processedRanges = data.commissionRanges?.map(range => ({
         id: uuidv4(),
         minAmount: parseFloat(range.minAmount),
@@ -141,14 +151,25 @@ export default function ConfigureSimpleCommissionPage() {
         fixedValue: range.fixedValue
           ? parseFloat(range.fixedValue)
           : null,
-        startDate: new Date(range.startDate).toISOString(),
-        endDate: new Date(range.endDate).toISOString(),
+        isActive: true, // Ranges are active by default
       })) || [];
+
+      // Calculate status based on dates
+      const startDate = data.startDate || new Date().toISOString();
+      const now = new Date();
+      const start = new Date(startDate);
+      let status: "ACTIVE" | "SCHEDULED" | "EXPIRED" | "CANCELLED" = "ACTIVE";
+
+      if (start > now) {
+        status = "SCHEDULED";
+      }
 
       await createAssignment({
         merchantId,
         countryCode: data.countryCode,
         channelCode: data.channelCode,
+        startDate,
+        endDate: data.endDate || null,
         basePercentageValue: data.basePercentageValue
           ? parseFloat(data.basePercentageValue) / 100
           : null,
@@ -156,7 +177,7 @@ export default function ConfigureSimpleCommissionPage() {
           ? parseFloat(data.baseFixedValue)
           : null,
         commissionRanges: processedRanges,
-        status: "ACTIVE",
+        status,
         assignedBy: data.assignedBy,
       });
 
@@ -261,23 +282,63 @@ export default function ConfigureSimpleCommissionPage() {
                   </p>
                 )}
               </div>
+            </div>
 
-              {/* Summary */}
-              <div className="space-y-2">
-                <Label>Configurando</Label>
-                <div className="rounded-md border bg-muted p-3">
-                  <p className="text-sm font-medium">
-                    {selectedCountry && selectedChannel ? (
-                      <>
-                        {selectedCountry} • {getChannelName(selectedChannel)}
-                      </>
-                    ) : (
-                      <span className="text-muted-foreground">
-                        Seleccione país y canal
-                      </span>
-                    )}
+            {/* Date Range Section */}
+            <div className="rounded-md border border-blue-200 bg-blue-50 p-4 space-y-4">
+              <h3 className="text-sm font-semibold text-blue-900">Vigencia de la Comisión</h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">
+                    Fecha de Inicio *
+                  </Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    {...register("startDate")}
+                  />
+                  {errors.startDate && (
+                    <p className="text-sm text-red-500">{errors.startDate.message}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Fecha desde la cual esta comisión estará vigente
                   </p>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">
+                    Fecha de Fin (Opcional)
+                  </Label>
+                  <Input
+                    id="endDate"
+                    type="date"
+                    {...register("endDate")}
+                  />
+                  {errors.endDate && (
+                    <p className="text-sm text-red-500">{errors.endDate.message}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Dejar vacío para comisión sin fecha de expiración
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary */}
+            <div className="space-y-2">
+              <Label>Configurando</Label>
+              <div className="rounded-md border bg-muted p-3">
+                <p className="text-sm font-medium">
+                  {selectedCountry && selectedChannel ? (
+                    <>
+                      {selectedCountry} • {getChannelName(selectedChannel)}
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Seleccione país y canal
+                    </span>
+                  )}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -360,8 +421,6 @@ export default function ConfigureSimpleCommissionPage() {
                   maxAmount: "",
                   percentageValue: "",
                   fixedValue: "",
-                  startDate: "",
-                  endDate: "",
                 })}
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -456,38 +515,6 @@ export default function ConfigureSimpleCommissionPage() {
                           placeholder="Ej: 300"
                           {...register(`commissionRanges.${index}.fixedValue`)}
                         />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor={`commissionRanges.${index}.startDate`}>
-                          Fecha de Inicio *
-                        </Label>
-                        <Input
-                          id={`commissionRanges.${index}.startDate`}
-                          type="datetime-local"
-                          {...register(`commissionRanges.${index}.startDate`)}
-                        />
-                        {errors.commissionRanges?.[index]?.startDate && (
-                          <p className="text-sm text-red-500">
-                            {errors.commissionRanges[index]?.startDate?.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor={`commissionRanges.${index}.endDate`}>
-                          Fecha de Fin *
-                        </Label>
-                        <Input
-                          id={`commissionRanges.${index}.endDate`}
-                          type="datetime-local"
-                          {...register(`commissionRanges.${index}.endDate`)}
-                        />
-                        {errors.commissionRanges?.[index]?.endDate && (
-                          <p className="text-sm text-red-500">
-                            {errors.commissionRanges[index]?.endDate?.message}
-                          </p>
-                        )}
                       </div>
                     </div>
 

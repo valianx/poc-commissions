@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { AssignmentStatus } from "@/types/commission";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -23,4 +24,39 @@ export function formatDateTime(date: string | Date): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(d);
+}
+
+/**
+ * Calculate commission assignment status based on dates
+ * @param startDate - Commission start date
+ * @param endDate - Commission end date (null means indefinite)
+ * @param currentStatus - Current status (may be CANCELLED which overrides date logic)
+ * @returns The calculated status
+ */
+export function calculateAssignmentStatus(
+  startDate: string,
+  endDate: string | null,
+  currentStatus?: AssignmentStatus
+): AssignmentStatus {
+  // If manually cancelled, keep that status
+  if (currentStatus === "CANCELLED") {
+    return "CANCELLED";
+  }
+
+  const now = new Date();
+  const start = new Date(startDate);
+  const end = endDate ? new Date(endDate) : null;
+
+  // Future commission
+  if (start > now) {
+    return "SCHEDULED";
+  }
+
+  // Past commission (has end date and it's passed)
+  if (end && end < now) {
+    return "EXPIRED";
+  }
+
+  // Active commission (started and not ended yet)
+  return "ACTIVE";
 }

@@ -87,6 +87,8 @@ export default function EditCommissionPage() {
           ? (assignment.basePercentageValue * 100).toString()
           : "",
         baseFixedValue: assignment.baseFixedValue?.toString() || "",
+        startDate: assignment.startDate ? new Date(assignment.startDate).toISOString().split('T')[0] : "",
+        endDate: assignment.endDate ? new Date(assignment.endDate).toISOString().split('T')[0] : "",
         assignedBy: assignment.assignedBy,
         commissionRanges: assignment.commissionRanges?.map(range => ({
           id: range.id,
@@ -96,8 +98,6 @@ export default function EditCommissionPage() {
             ? (range.percentageValue * 100).toString()
             : "",
           fixedValue: range.fixedValue?.toString() || "",
-          startDate: new Date(range.startDate).toISOString().slice(0, 16),
-          endDate: new Date(range.endDate).toISOString().slice(0, 16),
         })) || [],
       });
     }

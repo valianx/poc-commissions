@@ -1,14 +1,14 @@
-export type AssignmentStatus = "ACTIVE" | "EXPIRED" | "CANCELLED";
+export type AssignmentStatus = "ACTIVE" | "EXPIRED" | "CANCELLED" | "SCHEDULED";
 
 // Commission range for amount-based commission overrides
+// Note: Ranges don't have dates - they inherit the dates from the parent assignment
 export interface CommissionRange {
   id: string;
   minAmount: number;
   maxAmount: number;
   percentageValue: number | null; // Percentage commission (e.g., 0.035 for 3.5%)
   fixedValue: number | null; // Fixed commission amount
-  startDate: string;
-  endDate: string;
+  isActive: boolean; // Can be enabled/disabled without deletion
 }
 
 export interface CommissionAssignment {
@@ -16,15 +16,16 @@ export interface CommissionAssignment {
   merchantId: string;
   countryCode: string;
   channelCode: string;
+  // Date range for when this commission is valid
+  startDate: string; // Required: when commission starts
+  endDate: string | null; // null means no end date (indefinite)
   // New model fields (optional for backward compatibility)
   basePercentageValue?: number | null; // Percentage commission (e.g., 0.035 for 3.5%)
   baseFixedValue?: number | null; // Fixed commission amount
   commissionRanges?: CommissionRange[];
   // Legacy model fields (optional for forward compatibility)
   commissionTemplateId?: string;
-  startDate?: string;
-  endDate?: string | null;
-  status: AssignmentStatus;
+  status: AssignmentStatus; // Calculated based on dates: SCHEDULED (future), ACTIVE (current), EXPIRED (past), CANCELLED (manually cancelled)
   assignedBy: string;
   createdAt: string;
   updatedAt?: string;

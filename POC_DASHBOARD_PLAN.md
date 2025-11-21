@@ -10,13 +10,12 @@
 ## 📋 ÍNDICE
 
 1. [Visión General](#visión-general)
-2. [Análisis de Servicios Existentes](#análisis-de-servicios-existentes)
-3. [Arquitectura del Dashboard](#arquitectura-del-dashboard)
-4. [Estructura del Proyecto](#estructura-del-proyecto)
-5. [Modelo de Datos LocalStorage](#modelo-de-datos-localstorage)
-6. [Plan de Implementación](#plan-de-implementación)
-7. [Diseño UI/UX](#diseño-uiux)
-8. [Testing y Validación](#testing-y-validación)
+2. [Arquitectura del Dashboard](#arquitectura-del-dashboard)
+3. [Estructura del Proyecto](#estructura-del-proyecto)
+4. [Modelo de Datos LocalStorage](#modelo-de-datos-localstorage)
+5. [Plan de Implementación](#plan-de-implementación)
+6. [Diseño UI/UX](#diseño-uiux)
+7. [Testing y Validación](#testing-y-validación)
 
 ---
 
@@ -66,171 +65,9 @@ Crear una Prueba de Concepto (POC) de un dashboard corporativo que permita:
 
 ---
 
-## 2. ANÁLISIS DE SERVICIOS EXISTENTES
+## 2. ARQUITECTURA DEL DASHBOARD
 
-### 2.1 Merchants Service
-
-**Ubicación:** `C:\Users\Admn\zippy\merchants`
-
-**Entidad Principal:**
-```typescript
-interface Merchant {
-  id: string;                    // UUID
-  name: string;                  // Nombre del merchant
-  code: string;                  // Código único
-  isActive: boolean;             // Estado activo/inactivo
-  countries: string[];           // Países donde opera
-  balanceEvaluationEnabled: boolean;
-  depositCallbackUrl: string | null;
-  withdrawalCallbackUrl: string | null;
-  callbackApiKeyRef: string | null;
-  callbackSecretKeyRef: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-}
-```
-
-**Funcionalidades Identificadas:**
-- CRUD de merchants
-- Gestión de países
-- Configuración de callbacks
-- Soft delete
-
----
-
-### 2.2 Channels Service
-
-**Ubicación:** `C:\Users\Admn\zippy\channels`
-
-**Entidades Principales:**
-
-**Channel:**
-```typescript
-interface Channel {
-  id: string;          // UUID
-  code: string;        // Código único (ej: 'pix', 'credit_card')
-  name: string;        // Nombre descriptivo
-  description: string; // Descripción
-  isActive: boolean;   // Estado
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-}
-```
-
-**PSP:**
-```typescript
-interface PSP {
-  id: string;
-  code: string;
-  name: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-}
-```
-
-**Funcionalidades Identificadas:**
-- CRUD de channels
-- CRUD de PSPs
-- Relación Channel-PSP
-- Soft delete
-
----
-
-### 2.3 Commissions Service
-
-**Fuente:** Documentación RFC (`COMMISSIONS_SERVICE_HIGH_LEVEL.md`)
-
-**Entidades Principales:**
-
-**CommissionTemplate:**
-```typescript
-interface CommissionTemplate {
-  id: string;
-  code: string;
-  name: string;
-  type: 'FIXED' | 'PERCENTAGE';
-  status: 'DRAFT' | 'APPROVED' | 'PUBLISHED';
-  effectiveDate: Date;
-  expirationDate: Date | null;
-  createdBy: string;
-  approvedBy: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-}
-```
-
-**CommissionParameter:**
-```typescript
-interface CommissionParameter {
-  id: string;
-  commissionTemplateId: string;
-  parameterType: 'PERCENTAGE' | 'FIXED_FEE' | 'MIN_RANGE' | 'MAX_RANGE';
-  value: number;
-  currency: string;
-  minRange: number | null;
-  maxRange: number | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-```
-
-**CommissionAssignment:**
-```typescript
-interface CommissionAssignment {
-  id: string;
-  commissionTemplateId: string;
-  merchantId: string;
-  countryCode: string;
-  channelCode: string;
-  startDate: Date;
-  endDate: Date | null;
-  status: 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
-  assignedBy: string;
-  createdAt: Date;
-}
-```
-
-**MerchantTaxConfig:**
-```typescript
-interface MerchantTaxConfig {
-  id: string;
-  merchantId: string;
-  countryCode: string;
-  channelCode: string;
-  taxCode: string;    // 'IVA', 'ICMS', 'PIS', etc.
-  taxName: string;
-  rate: number;       // 0.19 para 19%
-  isActive: boolean;
-  createdAt: Date;
-}
-```
-
-**PSPCommission:**
-```typescript
-interface PSPCommission {
-  id: string;
-  pspId: string;
-  countryCode: string;
-  channelCode: string;
-  commissionType: 'PERCENTAGE' | 'FIXED' | 'MIXED';
-  percentage: number;
-  fixedFee: number;
-  currency: string;
-  isActive: boolean;
-  createdAt: Date;
-}
-```
-
----
-
-## 3. ARQUITECTURA DEL DASHBOARD
-
-### 3.1 Arquitectura de Alto Nivel
+### 2.1 Arquitectura de Alto Nivel
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -267,7 +104,7 @@ interface PSPCommission {
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 3.2 Patrones de Diseño
+### 2.2 Patrones de Diseño
 
 **1. Repository Pattern:**
 - Abstracción del acceso a datos (localStorage)
@@ -285,7 +122,7 @@ interface PSPCommission {
 
 ---
 
-## 4. ESTRUCTURA DEL PROYECTO
+## 3. ESTRUCTURA DEL PROYECTO
 
 ```
 zippy-dashboard/
@@ -377,9 +214,9 @@ zippy-dashboard/
 
 ---
 
-## 5. MODELO DE DATOS LOCALSTORAGE
+## 4. MODELO DE DATOS LOCALSTORAGE
 
-### 5.1 Estructura de Keys
+### 4.1 Estructura de Keys
 
 ```typescript
 // Keys principales
@@ -396,7 +233,7 @@ const STORAGE_KEYS = {
 } as const;
 ```
 
-### 5.2 Formato de Datos
+### 4.2 Formato de Datos
 
 ```typescript
 // localStorage structure
@@ -463,7 +300,7 @@ const STORAGE_KEYS = {
 
 ---
 
-## 6. PLAN DE IMPLEMENTACIÓN (SIMPLIFICADO)
+## 5. PLAN DE IMPLEMENTACIÓN (SIMPLIFICADO)
 
 ### FASE 1: SETUP Y FUNDAMENTOS (Día 1)
 
@@ -1433,9 +1270,9 @@ test('create new merchant', async ({ page }) => {
 
 ---
 
-## 7. DISEÑO UI/UX
+## 6. DISEÑO UI/UX
 
-### 7.1 Paleta de Colores (Corporativo)
+### 6.1 Paleta de Colores (Corporativo)
 
 ```css
 :root {
@@ -1474,7 +1311,7 @@ test('create new merchant', async ({ page }) => {
 }
 ```
 
-### 7.2 Componentes Clave
+### 6.2 Componentes Clave
 
 **Sidebar:**
 - Logo arriba
@@ -1508,9 +1345,9 @@ test('create new merchant', async ({ page }) => {
 
 ---
 
-## 8. TESTING Y VALIDACIÓN
+## 7. TESTING Y VALIDACIÓN
 
-### 8.1 Checklist de Testing
+### 7.1 Checklist de Testing
 
 **Unit Tests:**
 - [ ] Stores (Zustand)
@@ -1531,7 +1368,7 @@ test('create new merchant', async ({ page }) => {
 - [ ] CRUD commissions
 - [ ] Responsive en mobile
 
-### 8.2 Performance
+### 7.2 Performance
 
 - [ ] Lighthouse score > 90
 - [ ] First Contentful Paint < 1.5s

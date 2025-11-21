@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 // Commission range schema for amount-based overrides
+// Note: Ranges inherit dates from parent assignment, only have isActive flag
 export const commissionRangeSchema = z.object({
   minAmount: z.number().min(0, "El monto mínimo debe ser mayor o igual a 0"),
   maxAmount: z.number().min(0, "El monto máximo debe ser mayor o igual a 0"),
@@ -10,8 +11,7 @@ export const commissionRangeSchema = z.object({
     .max(1, "El porcentaje debe estar entre 0 y 1")
     .nullable(),
   fixedValue: z.number().min(0, "El valor fijo debe ser mayor o igual a 0").nullable(),
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
+  isActive: z.boolean().default(true),
 }).refine(
   (data) => data.percentageValue !== null || data.fixedValue !== null,
   {
@@ -32,6 +32,9 @@ export const commissionAssignmentSchema = z.object({
     .length(2, "El código de país debe tener 2 caracteres")
     .toUpperCase(),
   channelCode: z.string().min(2, "Código de canal inválido"),
+  // Date range for validity
+  startDate: z.string().datetime({ message: "Debe especificar una fecha de inicio válida" }),
+  endDate: z.string().datetime().nullable().optional(),
   // New model fields
   basePercentageValue: z
     .number()
@@ -43,13 +46,17 @@ export const commissionAssignmentSchema = z.object({
   commissionRanges: z.array(commissionRangeSchema).optional(),
   // Legacy model fields
   commissionTemplateId: z.string().uuid("ID de template inválido").optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().nullable().optional(),
-  status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED"], {
+  status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED", "SCHEDULED"], {
     message: "Estado inválido",
   }),
   assignedBy: z.string().email("Debe ser un email válido"),
-});
+}).refine(
+  (data) => !data.endDate || new Date(data.startDate) < new Date(data.endDate),
+  {
+    message: "La fecha de fin debe ser posterior a la fecha de inicio",
+    path: ["endDate"],
+  }
+);
 
 // Legacy schemas - kept for backward compatibility
 export const commissionTemplateSchema = z.object({

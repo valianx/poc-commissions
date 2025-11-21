@@ -33,15 +33,14 @@ export class CommissionCalculatorService {
 
     if (assignment.basePercentageValue !== undefined || assignment.baseFixedValue !== undefined) {
       // New model: direct values
-      // First check if there's a matching commission range for this amount
+      // First check if there's a matching active commission range for this amount
       let rangeFound = false;
 
       if (assignment.commissionRanges && assignment.commissionRanges.length > 0) {
-        const now = new Date();
         const matchingRange = assignment.commissionRanges.find(range => {
           const isInRange = simulation.amount >= range.minAmount && simulation.amount <= range.maxAmount;
-          const isActive = new Date(range.startDate) <= now && new Date(range.endDate) >= now;
-          return isInRange && isActive;
+          // Only use active ranges (dates are inherited from parent assignment)
+          return isInRange && range.isActive;
         });
 
         if (matchingRange) {

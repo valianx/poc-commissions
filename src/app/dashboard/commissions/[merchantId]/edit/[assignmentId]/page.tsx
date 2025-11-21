@@ -17,6 +17,9 @@ import { v4 as uuidv4 } from "uuid";
 
 // Form schema for editing
 const editCommissionSchema = z.object({
+  // Assignment dates
+  startDate: z.string().min(1, "Fecha de inicio requerida"),
+  endDate: z.string().optional(),
   basePercentageValue: z.string().optional(),
   baseFixedValue: z.string().optional(),
   assignedBy: z.string().email("Debe ser un email válido"),
@@ -26,14 +29,19 @@ const editCommissionSchema = z.object({
     maxAmount: z.string().min(1, "Monto máximo requerido"),
     percentageValue: z.string().optional(),
     fixedValue: z.string().optional(),
-    startDate: z.string().min(1, "Fecha de inicio requerida"),
-    endDate: z.string().min(1, "Fecha de fin requerida"),
+    // Ranges don't have dates, only isActive
   })).optional(),
 }).refine(
   (data) => data.basePercentageValue || data.baseFixedValue,
   {
     message: "Debe especificar al menos un valor de comisión (porcentaje o fijo)",
     path: ["basePercentageValue"],
+  }
+).refine(
+  (data) => !data.endDate || new Date(data.startDate) < new Date(data.endDate),
+  {
+    message: "La fecha de fin debe ser posterior a la fecha de inicio",
+    path: ["endDate"],
   }
 );
 
@@ -126,7 +134,7 @@ export default function EditCommissionPage() {
 
   const onSubmit = async (data: EditCommissionFormData) => {
     try {
-      // Process commission ranges
+      // Process commission ranges (no dates, only isActive)
       const processedRanges = data.commissionRanges?.map(range => ({
         id: range.id || uuidv4(),
         minAmount: parseFloat(range.minAmount),
@@ -137,11 +145,29 @@ export default function EditCommissionPage() {
         fixedValue: range.fixedValue
           ? parseFloat(range.fixedValue)
           : null,
-        startDate: new Date(range.startDate).toISOString(),
-        endDate: new Date(range.endDate).toISOString(),
+        isActive: true, // Keep ranges active by default when editing
       })) || [];
 
+      // Calculate status based on dates
+      const startDate = data.startDate;
+      const now = new Date();
+      const start = new Date(startDate);
+      let status: "ACTIVE" | "SCHEDULED" | "EXPIRED" | "CANCELLED" = assignment?.status || "ACTIVE";
+
+      // Only recalculate if not manually cancelled
+      if (status !== "CANCELLED") {
+        if (start > now) {
+          status = "SCHEDULED";
+        } else if (data.endDate && new Date(data.endDate) < now) {
+          status = "EXPIRED";
+        } else {
+          status = "ACTIVE";
+        }
+      }
+
       await updateAssignment(assignmentId, {
+        startDate,
+        endDate: data.endDate || null,
         basePercentageValue: data.basePercentageValue
           ? parseFloat(data.basePercentageValue) / 100
           : null,
@@ -149,6 +175,7 @@ export default function EditCommissionPage() {
           ? parseFloat(data.baseFixedValue)
           : null,
         commissionRanges: processedRanges,
+        status,
         assignedBy: data.assignedBy,
       });
 
@@ -200,6 +227,49 @@ export default function EditCommissionPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Estado</p>
                 <p className="font-medium">{assignment.status}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Date Range Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Vigencia de la Comisión</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Configure el período de validez de esta comisión
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Fecha de Inicio *</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  {...register("startDate")}
+                />
+                {errors.startDate && (
+                  <p className="text-sm text-red-500">{errors.startDate.message}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Fecha desde la cual esta comisión estará vigente
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="endDate">Fecha de Fin (Opcional)</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  {...register("endDate")}
+                />
+                {errors.endDate && (
+                  <p className="text-sm text-red-500">{errors.endDate.message}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Dejar vacío para comisión sin fecha de expiración
+                </p>
               </div>
             </div>
           </CardContent>
@@ -282,8 +352,6 @@ export default function EditCommissionPage() {
                   maxAmount: "",
                   percentageValue: "",
                   fixedValue: "",
-                  startDate: "",
-                  endDate: "",
                 })}
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -378,38 +446,6 @@ export default function EditCommissionPage() {
                           placeholder="Ej: 300"
                           {...register(`commissionRanges.${index}.fixedValue`)}
                         />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor={`commissionRanges.${index}.startDate`}>
-                          Fecha de Inicio *
-                        </Label>
-                        <Input
-                          id={`commissionRanges.${index}.startDate`}
-                          type="datetime-local"
-                          {...register(`commissionRanges.${index}.startDate`)}
-                        />
-                        {errors.commissionRanges?.[index]?.startDate && (
-                          <p className="text-sm text-red-500">
-                            {errors.commissionRanges[index]?.startDate?.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor={`commissionRanges.${index}.endDate`}>
-                          Fecha de Fin *
-                        </Label>
-                        <Input
-                          id={`commissionRanges.${index}.endDate`}
-                          type="datetime-local"
-                          {...register(`commissionRanges.${index}.endDate`)}
-                        />
-                        {errors.commissionRanges?.[index]?.endDate && (
-                          <p className="text-sm text-red-500">
-                            {errors.commissionRanges[index]?.endDate?.message}
-                          </p>
-                        )}
                       </div>
                     </div>
 

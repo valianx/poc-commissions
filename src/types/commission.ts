@@ -17,7 +17,6 @@ export interface CommissionAssignment {
   countryCode: string;
   channelCode: string;
   description?: string; // Optional description for why this commission is charged
-  isVat?: boolean; // If true, this commission is a tax (VAT/IVA) that applies to Zippy's commission, not the transaction amount
   // Date range for when this commission is valid
   startDate: string; // Required: when commission starts
   endDate: string | null; // null means no end date (indefinite)
@@ -25,8 +24,11 @@ export interface CommissionAssignment {
   basePercentageValue?: number | null; // Percentage commission (e.g., 0.035 for 3.5%)
   baseFixedValue?: number | null; // Fixed commission amount
   commissionRanges?: CommissionRange[];
+  // VAT configuration (optional - applies to this commission's base value)
+  vatPercentage?: number | null; // VAT percentage to apply to base commission (e.g., 0.19 for 19% VAT)
   // Legacy model fields (optional for forward compatibility)
   commissionTemplateId?: string;
+  isVat?: boolean; // DEPRECATED: Use vatPercentage instead. Kept for backward compatibility.
   status: AssignmentStatus; // Calculated based on dates: SCHEDULED (future), ACTIVE (current), EXPIRED (past), CANCELLED (manually cancelled)
   assignedBy: string;
   createdAt: string;

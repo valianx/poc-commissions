@@ -24,21 +24,15 @@ export class CommissionCalculatorService {
       );
     }
 
-    // 2. Calculate base commission by summing ALL active assignments
-    // Separate direct commissions from VAT commissions
-    let baseCommission: number = 0;
+    // 2. Calculate total commission from ALL active assignments
+    // Each assignment now includes its own VAT percentage
+    let totalCommission: number = 0;
     let totalPercentage: number = 0;
     let totalFixedFee: number = 0;
     let hasPercentage = false;
     let hasFixed = false;
 
-    // Collect VAT commissions to apply later (after calculating base commission)
-    const vatCommissions: Array<{
-      percentageValue: number | null;
-      fixedValue: number | null;
-    }> = [];
-
-    // Sum all active commission assignments
+    // Sum all active commission assignments (each with their own VAT)
     for (const assignment of assignments) {
       if (assignment.basePercentageValue !== undefined || assignment.baseFixedValue !== undefined) {
         // New model: direct values
@@ -56,14 +50,23 @@ export class CommissionCalculatorService {
             rangeFound = true;
             const percentageComm = (matchingRange.percentageValue || 0) * simulation.amount;
             const fixedComm = matchingRange.fixedValue || 0;
-            baseCommission += percentageComm + fixedComm;
+            const baseForThisRange = percentageComm + fixedComm;
+
+            // Apply VAT if configured for this assignment
+            const vat = assignment.vatPercentage || 0;
+            const vatAmount = baseForThisRange * vat;
+            const totalForThisRange = baseForThisRange + vatAmount;
+
+            totalCommission += totalForThisRange;
 
             if (matchingRange.percentageValue) {
-              totalPercentage += matchingRange.percentageValue;
+              const effectivePercentage = matchingRange.percentageValue * (1 + vat);
+              totalPercentage += effectivePercentage;
               hasPercentage = true;
             }
             if (matchingRange.fixedValue) {
-              totalFixedFee += matchingRange.fixedValue;
+              const effectiveFixed = matchingRange.fixedValue * (1 + vat);
+              totalFixedFee += effectiveFixed;
               hasFixed = true;
             }
           }
@@ -71,28 +74,29 @@ export class CommissionCalculatorService {
 
         // If no range found, use base values
         if (!rangeFound) {
-          // Check if this is a VAT commission
-          if (assignment.isVat) {
-            // VAT commissions are applied to Zippy's commission, not transaction amount
-            // Store them for later calculation
-            vatCommissions.push({
-              percentageValue: assignment.basePercentageValue || null,
-              fixedValue: assignment.baseFixedValue || null,
-            });
-          } else {
-            // Direct commissions apply to transaction amount
-            const percentageComm = (assignment.basePercentageValue || 0) * simulation.amount;
-            const fixedComm = assignment.baseFixedValue || 0;
-            baseCommission += percentageComm + fixedComm;
+          // Calculate base commission for this assignment
+          const percentageComm = (assignment.basePercentageValue || 0) * simulation.amount;
+          const fixedComm = assignment.baseFixedValue || 0;
+          const baseForThisAssignment = percentageComm + fixedComm;
 
-            if (assignment.basePercentageValue) {
-              totalPercentage += assignment.basePercentageValue;
-              hasPercentage = true;
-            }
-            if (assignment.baseFixedValue) {
-              totalFixedFee += assignment.baseFixedValue;
-              hasFixed = true;
-            }
+          // Apply VAT if configured for this assignment
+          const vat = assignment.vatPercentage || 0;
+          const vatAmount = baseForThisAssignment * vat;
+          const totalForThisAssignment = baseForThisAssignment + vatAmount;
+
+          totalCommission += totalForThisAssignment;
+
+          if (assignment.basePercentageValue) {
+            // Track total percentage including VAT
+            const effectivePercentage = assignment.basePercentageValue * (1 + vat);
+            totalPercentage += effectivePercentage;
+            hasPercentage = true;
+          }
+          if (assignment.baseFixedValue) {
+            // Fixed fee with VAT applied
+            const effectiveFixed = assignment.baseFixedValue * (1 + vat);
+            totalFixedFee += effectiveFixed;
+            hasFixed = true;
           }
         }
       } else {
@@ -109,7 +113,7 @@ export class CommissionCalculatorService {
         );
 
         const result = this.calculateBaseCommission(simulation.amount, parameters);
-        baseCommission += result.baseCommission;
+        totalCommission += result.baseCommission;
 
         if (result.percentage) {
           totalPercentage += result.percentage;
@@ -133,18 +137,7 @@ export class CommissionCalculatorService {
     const percentage = hasPercentage ? totalPercentage : null;
     const fixedFee = hasFixed ? totalFixedFee : null;
 
-    // 3. Apply VAT commissions to baseCommission
-    let vatAmount = 0;
-    for (const vat of vatCommissions) {
-      const vatPercentageComm = (vat.percentageValue || 0) * baseCommission;
-      const vatFixedComm = vat.fixedValue || 0;
-      vatAmount += vatPercentageComm + vatFixedComm;
-    }
-
-    // Total merchant commission = base commission + VAT on base commission
-    const totalMerchantCommissionBeforePSP = baseCommission + vatAmount;
-
-    // 4. Obtener el canal para encontrar tanto el PSP asignado como los taxes
+    // 3. Obtener el canal para encontrar tanto el PSP asignado como los taxes
     const channel = channelsRepository.getByCode(simulation.channelCode);
     if (!channel) {
       throw new Error("Canal no encontrado");
@@ -157,35 +150,7 @@ export class CommissionCalculatorService {
       channel.id
     );
 
-    // 6. Legacy tax support from merchant channel config (deprecated - use isVat instead)
-    // This is kept for backward compatibility but VAT should now be configured as commission assignments with isVat=true
-    let taxesBreakdown: Array<{
-      taxCode: string;
-      taxName: string;
-      rate: number;
-      amount: number;
-    }> = [];
-
-    if (merchantChannelConfig && merchantChannelConfig.taxes) {
-      taxesBreakdown = merchantChannelConfig.taxes
-        .filter((tax) => tax.isActive)
-        .map((tax) => ({
-          taxCode: tax.taxCode,
-          taxName: tax.taxName,
-          rate: tax.rate,
-          amount: baseCommission * tax.rate,
-        }));
-    }
-
-    const totalTaxes = taxesBreakdown.reduce(
-      (sum, tax) => sum + tax.amount,
-      0
-    );
-
-    // 7. Comisión total al merchant = base commission + VAT on base commission + legacy taxes
-    const totalMerchantCommission = totalMerchantCommissionBeforePSP + totalTaxes;
-
-    // 8. Obtener comisión PSP
+    // 4. Obtener comisión PSP
 
     // Buscar el PSP asignado para el país en este canal
     const pspAssignment = channel.pspAssignments?.find(
@@ -228,34 +193,34 @@ export class CommissionCalculatorService {
     }
 
     // 9. Calcular resultado final
-    // Zippy cobra al merchant: su comisión + impuestos + comisión del PSP
-    const totalChargedToMerchant = totalMerchantCommission + pspAmount;
+    // Zippy cobra al merchant: su comisión (con VAT incluido) + comisión del PSP
+    const totalChargedToMerchant = totalCommission + pspAmount;
 
     // El merchant recibe el monto original menos todo lo que Zippy cobra
     const merchantReceives = simulation.amount - totalChargedToMerchant;
 
-    // Zippy cobra en total (comisión Zippy + impuestos + comisión PSP)
+    // Zippy cobra en total (comisión Zippy + comisión PSP)
     const zippyRevenue = totalChargedToMerchant;
 
     // Zippy paga al PSP (pass-through)
     const zippyCost = pspAmount;
 
-    // Ganancia neta de Zippy = Solo su comisión + impuestos (la comisión del PSP es pass-through)
-    const zippyNetProfit = totalMerchantCommission;
+    // Ganancia neta de Zippy = Solo su comisión (con VAT incluido) - la comisión del PSP es pass-through
+    const zippyNetProfit = totalCommission;
 
     return {
       transactionAmount: simulation.amount,
       currency: simulation.currency,
       merchantCommission: {
         type,
-        baseAmount: baseCommission,
+        baseAmount: totalCommission, // Total commission including VAT
         percentage: percentage ?? undefined,
         fixedFee: fixedFee ?? undefined,
-        subtotal: totalMerchantCommissionBeforePSP, // Includes base commission + VAT
+        subtotal: totalCommission, // Total commission (base + VAT)
       },
-      taxes: taxesBreakdown,
-      totalTaxes: vatAmount + totalTaxes, // Include VAT in total taxes
-      totalMerchantCommission,
+      taxes: [], // No separate taxes - VAT is included in commission
+      totalTaxes: 0, // VAT is included in totalCommission
+      totalMerchantCommission: totalCommission,
       pspCommission: {
         pspName: psp.name,
         type: pspType,

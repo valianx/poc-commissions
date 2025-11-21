@@ -19,7 +19,7 @@ import { v4 as uuidv4 } from "uuid";
 const editCommissionSchema = z.object({
   // Assignment dates
   description: z.string().optional(),
-  isVat: z.boolean().optional(),
+  vatPercentage: z.string().optional(),
   startDate: z.string().min(1, "Fecha de inicio requerida"),
   endDate: z.string().optional(),
   status: z.enum(["ACTIVE", "SCHEDULED", "EXPIRED", "CANCELLED"]),
@@ -79,7 +79,7 @@ export default function EditCommissionPage() {
     resolver: zodResolver(editCommissionSchema),
     defaultValues: {
       description: "",
-      isVat: false,
+      vatPercentage: "",
       status: "ACTIVE",
       basePercentageValue: "",
       baseFixedValue: "",
@@ -98,7 +98,9 @@ export default function EditCommissionPage() {
     if (assignment) {
       reset({
         description: assignment.description || "",
-        isVat: assignment.isVat || false,
+        vatPercentage: assignment.vatPercentage
+          ? (assignment.vatPercentage * 100).toString()
+          : "",
         status: assignment.status || "ACTIVE",
         basePercentageValue: assignment.basePercentageValue
           ? (assignment.basePercentageValue * 100).toString()
@@ -162,7 +164,9 @@ export default function EditCommissionPage() {
 
       await updateAssignment(assignmentId, {
         description: data.description || undefined,
-        isVat: data.isVat || false,
+        vatPercentage: data.vatPercentage
+          ? parseFloat(data.vatPercentage) / 100
+          : null,
         startDate: data.startDate,
         endDate: data.endDate || null,
         basePercentageValue: data.basePercentageValue
@@ -267,21 +271,24 @@ export default function EditCommissionPage() {
                 </p>
               </div>
 
-              {/* Is VAT Checkbox */}
-              <div className="flex items-center space-x-2">
-                <input
-                  id="isVat"
-                  type="checkbox"
-                  {...register("isVat")}
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
-                />
-                <Label htmlFor="isVat" className="cursor-pointer font-normal">
-                  Esta es una comisión de impuesto (VAT/IVA)
+              {/* VAT Percentage Field */}
+              <div className="space-y-2">
+                <Label htmlFor="vatPercentage">
+                  VAT/IVA (Opcional) %
                 </Label>
+                <Input
+                  id="vatPercentage"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  {...register("vatPercentage")}
+                  placeholder="Ej: 19 (para 19% de IVA)"
+                />
+                <p className="text-xs text-muted-foreground">
+                  El VAT se aplicará sobre la comisión base. Por ejemplo, si la comisión es 2% y el VAT es 19%, el total será 2% + (2% × 19%) = 2.38%
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground -mt-2">
-                Si marca esta opción, la comisión se aplicará sobre la comisión de Zippy en lugar del monto total de la transacción
-              </p>
             </div>
           </CardContent>
         </Card>

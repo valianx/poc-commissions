@@ -34,7 +34,7 @@ interface ConfigurationRow {
   channelName: string;
   isConfigured: boolean;
   assignmentId?: string;
-  commissionValue?: string;
+  assignment?: any; // Store full assignment for rendering
   pspName?: string;
   pspCommissionValue?: string;
   status?: string;
@@ -102,13 +102,33 @@ export default function MerchantCommissionsPage() {
 
   const renderCommissionValue = (assignment: any) => {
     const parts = [];
+    const vat = assignment.vatPercentage || 0;
+    const vatMultiplier = 1 + vat;
+
     if (assignment.basePercentageValue !== null && assignment.basePercentageValue !== undefined) {
-      parts.push(`${(assignment.basePercentageValue * 100).toFixed(2)}%`);
+      const totalPercentage = assignment.basePercentageValue * vatMultiplier;
+      parts.push(`${(totalPercentage * 100).toFixed(2)}%`);
     }
     if (assignment.baseFixedValue !== null && assignment.baseFixedValue !== undefined) {
-      parts.push(`$${assignment.baseFixedValue.toFixed(2)}`);
+      const totalFixed = assignment.baseFixedValue * vatMultiplier;
+      parts.push(`$${totalFixed.toFixed(2)}`);
     }
-    return parts.length > 0 ? parts.join(" + ") : "N/A";
+
+    const commissionStr = parts.length > 0 ? parts.join(" + ") : "N/A";
+
+    // If VAT is applied, show it as a note
+    if (vat > 0 && parts.length > 0) {
+      return (
+        <div className="space-y-1">
+          <div className="font-mono text-sm font-semibold">{commissionStr}</div>
+          <div className="text-xs text-muted-foreground">
+            (incluye {(vat * 100).toFixed(1)}% VAT)
+          </div>
+        </div>
+      );
+    }
+
+    return commissionStr;
   };
 
   // Generate all possible configurations
@@ -172,7 +192,7 @@ export default function MerchantCommissionsPage() {
                 channelName: channel.name,
                 isConfigured: true,
                 assignmentId: assignment.id,
-                commissionValue: renderCommissionValue(assignment),
+                assignment: assignment, // Store full assignment
                 pspName: psp?.name,
                 pspCommissionValue,
                 status: config.isActive ? assignment.status : "INACTIVE",
@@ -502,10 +522,8 @@ export default function MerchantCommissionsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {row.isConfigured ? (
-                          <div className="font-mono text-sm font-semibold">
-                            {row.commissionValue}
-                          </div>
+                        {row.isConfigured && row.assignment ? (
+                          renderCommissionValue(row.assignment)
                         ) : (
                           <span className="text-sm text-muted-foreground">-</span>
                         )}

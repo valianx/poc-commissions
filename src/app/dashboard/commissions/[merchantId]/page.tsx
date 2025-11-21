@@ -34,9 +34,6 @@ interface ConfigurationRow {
   channelName: string;
   isConfigured: boolean;
   assignmentId?: string;
-  templateId?: string;
-  templateName?: string;
-  templateType?: string;
   commissionValue?: string;
   pspName?: string;
   pspCommissionValue?: string;
@@ -53,13 +50,9 @@ export default function MerchantCommissionsPage() {
 
   const {
     assignments,
-    templates,
-    parameters,
     pspCommissions,
     taxConfigs,
     fetchAssignments,
-    fetchTemplates,
-    fetchParameters,
     fetchPSPCommissions,
     fetchTaxConfigs,
   } = useCommissionsStore();
@@ -79,8 +72,6 @@ export default function MerchantCommissionsPage() {
     fetchChannels();
     fetchPSPs();
     fetchAssignments();
-    fetchTemplates();
-    fetchParameters();
     fetchPSPCommissions();
     fetchTaxConfigs();
     fetchConfigs();
@@ -89,8 +80,6 @@ export default function MerchantCommissionsPage() {
     fetchChannels,
     fetchPSPs,
     fetchAssignments,
-    fetchTemplates,
-    fetchParameters,
     fetchPSPCommissions,
     fetchTaxConfigs,
     fetchConfigs,
@@ -115,48 +104,15 @@ export default function MerchantCommissionsPage() {
     );
   }
 
-  const getTemplate = (templateId: string) => {
-    return templates.find((t) => t.id === templateId);
-  };
-
-  const getTemplateParameters = (templateId: string) => {
-    return parameters.filter((p) => p.commissionTemplateId === templateId);
-  };
-
   const renderCommissionValue = (assignment: any) => {
-    // New model: direct values
-    if (assignment.basePercentageValue !== undefined || assignment.baseFixedValue !== undefined) {
-      const parts = [];
-      if (assignment.basePercentageValue !== null) {
-        parts.push(`${(assignment.basePercentageValue * 100).toFixed(2)}%`);
-      }
-      if (assignment.baseFixedValue !== null) {
-        parts.push(`$${assignment.baseFixedValue.toFixed(2)}`);
-      }
-      return parts.length > 0 ? parts.join(" + ") : "N/A";
+    const parts = [];
+    if (assignment.basePercentageValue !== null && assignment.basePercentageValue !== undefined) {
+      parts.push(`${(assignment.basePercentageValue * 100).toFixed(2)}%`);
     }
-
-    // Legacy model: template-based
-    const template = getTemplate(assignment.commissionTemplateId);
-    const params = getTemplateParameters(assignment.commissionTemplateId);
-
-    if (!template) return "N/A";
-
-    const percentageParam = params.find((p) => p.parameterType === "PERCENTAGE");
-    const fixedFeeParam = params.find((p) => p.parameterType === "FIXED_FEE");
-
-    if (template.type === "PERCENTAGE" && percentageParam) {
-      return `${(percentageParam.value * 100).toFixed(2)}%`;
-    } else if (template.type === "FIXED" && fixedFeeParam) {
-      return formatCurrency(fixedFeeParam.value, fixedFeeParam.currency);
-    } else if (template.type === "MIXED" && percentageParam && fixedFeeParam) {
-      return `${(percentageParam.value * 100).toFixed(2)}% + ${formatCurrency(
-        fixedFeeParam.value,
-        fixedFeeParam.currency
-      )}`;
+    if (assignment.baseFixedValue !== null && assignment.baseFixedValue !== undefined) {
+      parts.push(`$${assignment.baseFixedValue.toFixed(2)}`);
     }
-
-    return template.type;
+    return parts.length > 0 ? parts.join(" + ") : "N/A";
   };
 
   // Generate all possible configurations
@@ -222,19 +178,12 @@ export default function MerchantCommissionsPage() {
           // If there are assignments, create a row for each one
           if (channelAssignments.length > 0) {
             channelAssignments.forEach((assignment) => {
-              const template = (assignment as any).commissionTemplateId
-                ? getTemplate((assignment as any).commissionTemplateId)
-                : null;
-
               rows.push({
                 countryCode,
                 channelCode: channel.code,
                 channelName: channel.name,
                 isConfigured: true,
                 assignmentId: assignment.id,
-                templateId: (assignment as any)?.commissionTemplateId,
-                templateName: template?.name,
-                templateType: template?.type,
                 commissionValue: renderCommissionValue(assignment),
                 pspName: psp?.name,
                 pspCommissionValue,
@@ -475,7 +424,6 @@ export default function MerchantCommissionsPage() {
                   <TableHead>Estado</TableHead>
                   <TableHead>Vigencia</TableHead>
                   <TableHead>Comisión Merchant</TableHead>
-                  <TableHead>Template</TableHead>
                   <TableHead>PSP</TableHead>
                   <TableHead>Comisión PSP</TableHead>
                   <TableHead>Impuestos</TableHead>
@@ -485,7 +433,7 @@ export default function MerchantCommissionsPage() {
               <TableBody>
                 {filteredRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       <p className="text-muted-foreground">
                         No hay configuraciones que coincidan con el filtro
                       </p>
@@ -540,21 +488,9 @@ export default function MerchantCommissionsPage() {
                       </TableCell>
                       <TableCell>
                         {row.isConfigured ? (
-                          <div>
-                            <div className="font-mono text-sm font-semibold">
-                              {row.commissionValue}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {row.templateType}
-                            </div>
+                          <div className="font-mono text-sm font-semibold">
+                            {row.commissionValue}
                           </div>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {row.templateName ? (
-                          <div className="text-sm">{row.templateName}</div>
                         ) : (
                           <span className="text-sm text-muted-foreground">-</span>
                         )}

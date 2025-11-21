@@ -92,6 +92,13 @@ export default function ConfigureSimpleCommissionPage() {
     },
   });
 
+  // Log validation errors
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log("🔴 Validation errors:", errors);
+    }
+  }, [errors]);
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: "commissionRanges",
@@ -229,7 +236,10 @@ export default function ConfigureSimpleCommissionPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit, (errors) => {
+        console.log("🔴 Form validation failed:", errors);
+        setSaveError("Por favor complete todos los campos requeridos correctamente");
+      })} className="space-y-6">
         {/* Merchant and Selection Info */}
         <Card>
           <CardHeader>

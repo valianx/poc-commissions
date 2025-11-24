@@ -123,12 +123,14 @@ export function PaymentSimulator() {
         return false;
       }
 
-      // Verify the PSP has a commission configured for this country
-      const pspCommissionForCountry = psp.commissionsByCountry?.find(
-        (commission) => commission.countryCode === selectedCountryCode
+      // Verify the PSP has a commission configured for this channel+country
+      const pspCommissionForChannelCountry = psp.commissionsByChannelCountry?.find(
+        (commission) =>
+          commission.channelCode === channel.code &&
+          commission.countryCode === selectedCountryCode
       );
 
-      if (!pspCommissionForCountry) {
+      if (!pspCommissionForChannelCountry) {
         return false;
       }
 

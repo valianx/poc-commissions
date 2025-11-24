@@ -64,17 +64,26 @@ export function seedDatabase() {
       code: "PAYU",
       name: "PayU",
       isActive: true,
-      commissionsByCountry: [
+      commissionsByChannelCountry: [
         {
+          channelCode: "credit_card",
           countryCode: "CL",
           commissionType: "PERCENTAGE",
           percentageValue: 0.029, // 2.9%
           fixedValue: null,
         },
         {
-          countryCode: "AR",
+          channelCode: "credit_card",
+          countryCode: "PE",
           commissionType: "PERCENTAGE",
-          percentageValue: 0.035, // 3.5%
+          percentageValue: 0.032, // 3.2%
+          fixedValue: null,
+        },
+        {
+          channelCode: "debit_card",
+          countryCode: "CL",
+          commissionType: "PERCENTAGE",
+          percentageValue: 0.019, // 1.9%
           fixedValue: null,
         },
       ],
@@ -87,14 +96,23 @@ export function seedDatabase() {
       code: "MERCADOPAGO",
       name: "MercadoPago",
       isActive: true,
-      commissionsByCountry: [
+      commissionsByChannelCountry: [
         {
+          channelCode: "pix",
           countryCode: "BR",
           commissionType: "PERCENTAGE",
           percentageValue: 0.0499, // 4.99%
           fixedValue: null,
         },
         {
+          channelCode: "credit_card",
+          countryCode: "BR",
+          commissionType: "PERCENTAGE",
+          percentageValue: 0.0399, // 3.99%
+          fixedValue: null,
+        },
+        {
+          channelCode: "credit_card",
           countryCode: "AR",
           commissionType: "PERCENTAGE",
           percentageValue: 0.0399, // 3.99%
@@ -110,11 +128,19 @@ export function seedDatabase() {
       code: "TRANSBANK",
       name: "Transbank",
       isActive: true,
-      commissionsByCountry: [
+      commissionsByChannelCountry: [
         {
+          channelCode: "webpay",
           countryCode: "CL",
           commissionType: "PERCENTAGE",
           percentageValue: 0.025, // 2.5%
+          fixedValue: null,
+        },
+        {
+          channelCode: "debit_card",
+          countryCode: "CL",
+          commissionType: "PERCENTAGE",
+          percentageValue: 0.015, // 1.5%
           fixedValue: null,
         },
       ],

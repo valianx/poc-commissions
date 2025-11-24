@@ -210,7 +210,7 @@ export default function ChannelsPage() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {psp.commissionsByCountry?.length || 0} países
+                            {psp.commissionsByChannelCountry?.length || 0} configuraciones
                           </Badge>
                         </TableCell>
                         <TableCell>

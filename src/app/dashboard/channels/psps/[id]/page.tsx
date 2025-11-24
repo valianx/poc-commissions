@@ -31,12 +31,14 @@ const editPSPSchema = z.object({
 type EditPSPFormData = z.infer<typeof editPSPSchema>;
 type CommissionEntry = {
   id?: string;
+  channelCode: string;
   countryCode: string;
-  commissionType: "PERCENTAGE" | "FIXED";
+  commissionType: "PERCENTAGE" | "FIXED" | "MIXED";
   value: string;
 };
 
 const AVAILABLE_COUNTRIES = ["AR", "BR", "CL", "CO", "MX", "PE", "UY", "PY", "BO", "EC", "VE"];
+const AVAILABLE_CHANNELS = ["credit_card", "debit_card", "pix", "webpay", "bank_transfer"];
 
 export default function EditPSPPage() {
   const params = useParams();
@@ -45,8 +47,9 @@ export default function EditPSPPage() {
 
   const { psps, updatePSP, fetchPSPs } = useChannelsStore();
   const [commissions, setCommissions] = useState<CommissionEntry[]>([]);
+  const [newChannel, setNewChannel] = useState("");
   const [newCountry, setNewCountry] = useState("");
-  const [newType, setNewType] = useState<"PERCENTAGE" | "FIXED">("PERCENTAGE");
+  const [newType, setNewType] = useState<"PERCENTAGE" | "FIXED" | "MIXED">("PERCENTAGE");
   const [newValue, setNewValue] = useState("");
 
   useEffect(() => {
@@ -79,7 +82,8 @@ export default function EditPSPPage() {
       });
 
       // Load commissions
-      const loadedCommissions: CommissionEntry[] = psp.commissionsByCountry?.map(c => ({
+      const loadedCommissions: CommissionEntry[] = psp.commissionsByChannelCountry?.map(c => ({
+        channelCode: c.channelCode,
         countryCode: c.countryCode,
         commissionType: c.commissionType,
         value: c.commissionType === "PERCENTAGE" && c.percentageValue !== null
@@ -112,6 +116,7 @@ export default function EditPSPPage() {
   const onSubmit = (data: EditPSPFormData) => {
     try {
       const processedCommissions = commissions.map(c => ({
+        channelCode: c.channelCode,
         countryCode: c.countryCode,
         commissionType: c.commissionType,
         percentageValue: c.commissionType === "PERCENTAGE" && c.value
@@ -126,7 +131,7 @@ export default function EditPSPPage() {
         name: data.name,
         code: data.code,
         isActive: data.isActive,
-        commissionsByCountry: processedCommissions,
+        commissionsByChannelCountry: processedCommissions,
       });
 
       // Refetch to ensure we have the latest data
@@ -139,14 +144,25 @@ export default function EditPSPPage() {
   };
 
   const handleAddCommission = () => {
-    if (!newCountry || !newValue) return;
+    if (!newChannel || !newCountry || !newValue) return;
+
+    // Check if this channel+country combination already exists
+    const exists = commissions.some(
+      c => c.channelCode === newChannel && c.countryCode === newCountry
+    );
+    if (exists) {
+      alert("Ya existe una comisión para esta combinación de canal y país");
+      return;
+    }
 
     setCommissions([...commissions, {
+      channelCode: newChannel,
       countryCode: newCountry,
       commissionType: newType,
       value: newValue,
     }]);
 
+    setNewChannel("");
     setNewCountry("");
     setNewValue("");
   };
@@ -155,13 +171,6 @@ export default function EditPSPPage() {
     setCommissions(commissions.filter((_, i) => i !== index));
   };
 
-  const getUsedCountries = () => {
-    return commissions.map(c => c.countryCode);
-  };
-
-  const getAvailableCountries = () => {
-    return AVAILABLE_COUNTRIES.filter(country => !getUsedCountries().includes(country));
-  };
 
   return (
     <div className="space-y-6">
@@ -240,21 +249,36 @@ export default function EditPSPPage() {
           </CardContent>
         </Card>
 
-        {/* PSP Commissions by Country */}
+        {/* PSP Commissions by Channel+Country */}
         <Card>
           <CardHeader>
             <CardTitle>
-              Comisiones del PSP por País ({commissions.length})
+              Comisiones del PSP por Canal/País ({commissions.length})
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Estas comisiones son lo que el PSP cobra (solo para trazabilidad de costos)
+              Estas comisiones son lo que el PSP cobra por cada combinación de canal y país
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Add New Commission */}
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
               <h4 className="font-medium mb-3 text-blue-900">Agregar Comisión</h4>
-              <div className="grid gap-3 md:grid-cols-4">
+              <div className="grid gap-3 md:grid-cols-5">
+                <div className="space-y-1">
+                  <Label htmlFor="newChannel" className="text-xs">Canal</Label>
+                  <select
+                    id="newChannel"
+                    value={newChannel}
+                    onChange={(e) => setNewChannel(e.target.value)}
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
+                  >
+                    <option value="">Seleccionar</option>
+                    {AVAILABLE_CHANNELS.map(channel => (
+                      <option key={channel} value={channel}>{channel}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="space-y-1">
                   <Label htmlFor="newCountry" className="text-xs">País</Label>
                   <select
@@ -262,10 +286,9 @@ export default function EditPSPPage() {
                     value={newCountry}
                     onChange={(e) => setNewCountry(e.target.value)}
                     className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
-                    disabled={getAvailableCountries().length === 0}
                   >
                     <option value="">Seleccionar</option>
-                    {getAvailableCountries().map(country => (
+                    {AVAILABLE_COUNTRIES.map(country => (
                       <option key={country} value={country}>{country}</option>
                     ))}
                   </select>
@@ -276,7 +299,7 @@ export default function EditPSPPage() {
                   <select
                     id="newType"
                     value={newType}
-                    onChange={(e) => setNewType(e.target.value as "PERCENTAGE" | "FIXED")}
+                    onChange={(e) => setNewType(e.target.value as "PERCENTAGE" | "FIXED" | "MIXED")}
                     className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
                   >
                     <option value="PERCENTAGE">Porcentual</option>
@@ -304,7 +327,7 @@ export default function EditPSPPage() {
                   <Button
                     type="button"
                     onClick={handleAddCommission}
-                    disabled={!newCountry || !newValue}
+                    disabled={!newChannel || !newCountry || !newValue}
                     className="w-full h-9"
                     size="sm"
                   >
@@ -325,6 +348,7 @@ export default function EditPSPPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Canal</TableHead>
                       <TableHead>País</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
@@ -335,6 +359,11 @@ export default function EditPSPPage() {
                     {commissions.map((commission, index) => (
                       <TableRow key={index}>
                         <TableCell className="font-medium">
+                          <code className="rounded bg-blue-100 px-2 py-1 text-sm text-blue-800">
+                            {commission.channelCode}
+                          </code>
+                        </TableCell>
+                        <TableCell>
                           <code className="rounded bg-gray-100 px-2 py-1 text-sm">
                             {commission.countryCode}
                           </code>

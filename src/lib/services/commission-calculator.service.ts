@@ -131,12 +131,14 @@ export class CommissionCalculatorService {
       throw new Error("PSP no encontrado");
     }
 
-    const pspCommissionConfig = psp.commissionsByCountry?.find(
-      (commission) => commission.countryCode === simulation.countryCode
+    const pspCommissionConfig = psp.commissionsByChannelCountry?.find(
+      (commission) =>
+        commission.channelCode === simulation.channelCode &&
+        commission.countryCode === simulation.countryCode
     );
 
     if (!pspCommissionConfig) {
-      throw new Error(`No hay comisión configurada para el PSP ${psp.name} en ${simulation.countryCode}`);
+      throw new Error(`No hay comisión configurada para el PSP ${psp.name} en canal ${simulation.channelCode} / país ${simulation.countryCode}`);
     }
 
     // 4. Calcular comisión del PSP

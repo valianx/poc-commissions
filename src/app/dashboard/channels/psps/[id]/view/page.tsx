@@ -103,18 +103,18 @@ export default function ViewPSPPage() {
         </CardContent>
       </Card>
 
-      {/* PSP Commissions by Country */}
+      {/* PSP Commissions by Channel+Country */}
       <Card>
         <CardHeader>
           <CardTitle>
-            Comisiones por País ({psp.commissionsByCountry?.length || 0})
+            Comisiones por Canal/País ({psp.commissionsByChannelCountry?.length || 0})
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Estas comisiones son lo que el PSP cobra (solo para trazabilidad de costos)
+            Comisiones que el PSP cobra por cada combinación de canal y país
           </p>
         </CardHeader>
         <CardContent>
-          {!psp.commissionsByCountry || psp.commissionsByCountry.length === 0 ? (
+          {!psp.commissionsByChannelCountry || psp.commissionsByChannelCountry.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">
               No hay comisiones configuradas para este PSP
             </p>
@@ -123,15 +123,21 @@ export default function ViewPSPPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Canal</TableHead>
                     <TableHead>País</TableHead>
                     <TableHead>Tipo</TableHead>
                     <TableHead className="text-right">Valor</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {psp.commissionsByCountry.map((commission, index) => (
+                  {psp.commissionsByChannelCountry.map((commission, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">
+                        <code className="rounded bg-blue-100 px-2 py-1 text-sm text-blue-800">
+                          {commission.channelCode}
+                        </code>
+                      </TableCell>
+                      <TableCell>
                         <code className="rounded bg-gray-100 px-2 py-1 text-sm">
                           {commission.countryCode}
                         </code>

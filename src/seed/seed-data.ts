@@ -55,21 +55,6 @@ export function seedDatabase() {
       updatedAt: new Date().toISOString(),
       deletedAt: null,
     },
-    {
-      id: uuidv4(),
-      name: "Caliente",
-      code: "CALIENTE_MX",
-      isActive: true,
-      countries: ["MX"],
-      balanceEvaluationEnabled: false,
-      depositCallbackUrl: "https://caliente.mx/webhooks/deposit",
-      withdrawalCallbackUrl: "https://caliente.mx/webhooks/withdrawal",
-      callbackApiKeyRef: "caliente_key",
-      callbackSecretKeyRef: "caliente_secret",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deletedAt: null,
-    },
   ];
 
   // Create PSPs first (needed for channel assignments)
@@ -365,13 +350,16 @@ export function seedDatabase() {
       assignedBy: "admin@zippy.com",
       createdAt: new Date().toISOString(),
     },
-    // BetWarrior - Chile - Credit Card
+    // BetWarrior - Chile - Credit Card - WITH VAT
     {
       id: uuidv4(),
-      commissionTemplateId: templates[0].id,
-      merchantId: merchants[1].id,
+      merchantId: merchants[1].id, // BetWarrior
       countryCode: "CL",
       channelCode: "credit_card",
+      description: "Comisión estándar para BetWarrior Chile",
+      basePercentageValue: 0.035, // 3.5% base
+      baseFixedValue: null,
+      vatPercentage: 0.19, // 19% VAT
       startDate: new Date().toISOString(),
       endDate: null,
       status: "ACTIVE",

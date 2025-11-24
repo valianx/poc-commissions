@@ -343,6 +343,14 @@ export function PaymentSimulator() {
                   </span>
                 </div>
 
+                {/* Subtotal después de PSP */}
+                <div className="flex justify-between items-center border-t pt-2">
+                  <span className="font-medium">Ingreso Zippy</span>
+                  <span className="font-mono font-semibold">
+                    {formatCurrency(result.totalChargedToMerchant - result.zippyBreakdown.pspCost, result.currency)}
+                  </span>
+                </div>
+
                 {/* IVA */}
                 {result.zippyBreakdown.vatPercentage && result.zippyBreakdown.vatAmount > 0 && (
                   <div className="flex justify-between items-center text-yellow-700">
@@ -360,7 +368,7 @@ export function PaymentSimulator() {
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-emerald-700">Ganancia Neta Zippy</span>
                     <span className="font-mono text-lg font-bold text-emerald-700">
-                      {formatCurrency(result.zippyBreakdown.netProfit - result.zippyBreakdown.vatAmount, result.currency)}
+                      {formatCurrency(result.totalChargedToMerchant - result.zippyBreakdown.pspCost - result.zippyBreakdown.vatAmount, result.currency)}
                     </span>
                   </div>
                 </div>
@@ -378,7 +386,7 @@ export function PaymentSimulator() {
               <div className="rounded-lg bg-emerald-50 p-3">
                 <p className="text-xs text-gray-600">Ganancia Neta Zippy</p>
                 <p className="font-mono text-lg font-bold text-emerald-700">
-                  {formatCurrency(result.zippyBreakdown.netProfit - result.zippyBreakdown.vatAmount, result.currency)}
+                  {formatCurrency(result.totalChargedToMerchant - result.zippyBreakdown.pspCost - result.zippyBreakdown.vatAmount, result.currency)}
                 </p>
               </div>
             </div>

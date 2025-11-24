@@ -44,6 +44,10 @@ export function MerchantChannelConfig({
   const [selectedChannel, setSelectedChannel] = useState("");
   const [selectedPSP, setSelectedPSP] = useState("");
 
+  // Filter states
+  const [filterCountry, setFilterCountry] = useState<string>("");
+  const [filterChannel, setFilterChannel] = useState<string>("");
+
   useEffect(() => {
     fetchConfigs();
     fetchChannels();
@@ -51,6 +55,13 @@ export function MerchantChannelConfig({
   }, [fetchConfigs, fetchChannels, fetchPSPs]);
 
   const merchantConfigs = getConfigsByMerchant(merchant.id);
+
+  // Apply filters
+  const filteredConfigs = merchantConfigs.filter((config) => {
+    if (filterCountry && config.countryCode !== filterCountry) return false;
+    if (filterChannel && config.channelId !== filterChannel) return false;
+    return true;
+  });
 
   // Get available PSPs for selected country and channel
   const getAvailablePSPs = () => {
@@ -186,6 +197,62 @@ export function MerchantChannelConfig({
             Agregar Canal
           </Button>
         </div>
+
+        {/* Filters Section */}
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Filtrar por País</label>
+            <select
+              value={filterCountry}
+              onChange={(e) => setFilterCountry(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">Todos los países</option>
+              {merchant.countries.map((countryCode) => {
+                const country = COUNTRIES.find((c) => c.code === countryCode);
+                return (
+                  <option key={countryCode} value={countryCode}>
+                    {country?.name || countryCode}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Filtrar por Canal</label>
+            <select
+              value={filterChannel}
+              onChange={(e) => setFilterChannel(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="">Todos los canales</option>
+              {channels
+                .filter((ch) => ch.isActive)
+                .map((channel) => (
+                  <option key={channel.id} value={channel.id}>
+                    {channel.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+
+          {(filterCountry || filterChannel) && (
+            <div className="flex items-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setFilterCountry("");
+                  setFilterChannel("");
+                }}
+                className="w-full"
+              >
+                Limpiar Filtros
+              </Button>
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {isAdding && (
@@ -287,9 +354,13 @@ export function MerchantChannelConfig({
           <div className="py-10 text-center text-muted-foreground">
             No hay canales configurados. Haz clic en "Agregar Canal" para comenzar.
           </div>
+        ) : filteredConfigs.length === 0 ? (
+          <div className="py-10 text-center text-muted-foreground">
+            No se encontraron canales con los filtros seleccionados.
+          </div>
         ) : (
           <div className="space-y-3">
-            {merchantConfigs.map((config) => (
+            {filteredConfigs.map((config) => (
               <div key={config.id}>
                 {editingConfigId === config.id ? (
                   // Edit Mode

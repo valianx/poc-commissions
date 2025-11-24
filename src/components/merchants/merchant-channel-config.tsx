@@ -359,19 +359,40 @@ export function MerchantChannelConfig({
             No se encontraron canales con los filtros seleccionados.
           </div>
         ) : (
-          <div className="space-y-3">
-            {filteredConfigs.map((config) => (
-              <div key={config.id}>
-                {editingConfigId === config.id ? (
-                  // Edit Mode
-                  <Card className="bg-blue-50">
-                    <CardContent className="pt-6">
+          <div className="rounded-md border">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Canal
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Proveedor (PSP)
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    País
+                  </th>
+                  <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                    Estado
+                  </th>
+                  <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {editingConfigId && (
+                  <tr className="border-b bg-blue-50">
+                    <td colSpan={5} className="p-4">
                       <div className="space-y-4">
                         <div className="grid gap-4 md:grid-cols-3">
                           <div className="space-y-2">
                             <Label>País</Label>
                             <Input
-                              value={getCountryName(config.countryCode)}
+                              value={getCountryName(
+                                filteredConfigs.find((c) => c.id === editingConfigId)
+                                  ?.countryCode || ""
+                              )}
                               disabled
                               className="bg-gray-100"
                             />
@@ -379,7 +400,10 @@ export function MerchantChannelConfig({
                           <div className="space-y-2">
                             <Label>Canal</Label>
                             <Input
-                              value={getChannelName(config.channelId)}
+                              value={getChannelName(
+                                filteredConfigs.find((c) => c.id === editingConfigId)
+                                  ?.channelId || ""
+                              )}
                               disabled
                               className="bg-gray-100"
                             />
@@ -417,59 +441,61 @@ export function MerchantChannelConfig({
                           </Button>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  // View Mode
-                  <div className="rounded-lg border p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">
-                            {getCountryName(config.countryCode)} -{" "}
-                            {getChannelName(config.channelId)}
-                          </p>
-                          <Badge variant={config.isActive ? "success" : "secondary"}>
-                            {config.isActive ? "Activo" : "Inactivo"}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          PSP: {getPSPName(config.pspId)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditConfig(config.id)}
-                          disabled={isAdding || editingConfigId !== null}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Editar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleToggleConfig(config.id)}
-                          disabled={editingConfigId !== null}
-                        >
-                          {config.isActive ? "Desactivar" : "Activar"}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteConfig(config.id)}
-                          className="text-red-500 hover:text-red-700"
-                          disabled={editingConfigId !== null}
-                        >
-                          Eliminar
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                    </td>
+                  </tr>
                 )}
-              </div>
-            ))}
+                {filteredConfigs.map((config) => {
+                  if (editingConfigId === config.id) return null;
+                  return (
+                    <tr key={config.id} className="border-b hover:bg-muted/50">
+                      <td className="p-4 align-middle font-medium">
+                        {getChannelName(config.channelId)}
+                      </td>
+                      <td className="p-4 align-middle">
+                        {getPSPName(config.pspId)}
+                      </td>
+                      <td className="p-4 align-middle">
+                        {getCountryName(config.countryCode)}
+                      </td>
+                      <td className="p-4 align-middle">
+                        <Badge variant={config.isActive ? "success" : "secondary"}>
+                          {config.isActive ? "Activo" : "Inactivo"}
+                        </Badge>
+                      </td>
+                      <td className="p-4 align-middle text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditConfig(config.id)}
+                            disabled={isAdding || editingConfigId !== null}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleConfig(config.id)}
+                            disabled={editingConfigId !== null}
+                          >
+                            {config.isActive ? "Desactivar" : "Activar"}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteConfig(config.id)}
+                            className="text-red-500 hover:text-red-700"
+                            disabled={editingConfigId !== null}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </CardContent>

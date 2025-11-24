@@ -15,11 +15,18 @@ export interface TaxBreakdown {
 
 export interface CommissionBreakdown {
   type: "FIXED" | "PERCENTAGE" | "MIXED";
-  baseAmount: number; // Commission before VAT
-  vatAmount: number; // VAT applied to commission
+  baseAmount: number; // Comisión bruta de Zippy (sin VAT)
   percentage?: number;
   fixedFee?: number;
-  subtotal: number; // Total commission (baseAmount + vatAmount)
+}
+
+export interface ZippyBreakdown {
+  grossCommission: number; // Comisión bruta que cobra Zippy al merchant
+  pspCost: number; // Lo que Zippy paga al PSP
+  netProfit: number; // Ganancia neta de Zippy (gross - psp)
+  vatPercentage: number | null; // Porcentaje de VAT (ej: 0.19)
+  vatAmount: number; // VAT sobre la ganancia neta
+  totalToCollect: number; // Total que cobra Zippy (gross + vat)
 }
 
 export interface PSPCommissionBreakdown {
@@ -35,22 +42,16 @@ export interface SimulationResult {
   transactionAmount: number;
   currency: string;
 
-  // Comisión de Zippy al Merchant
+  // Comisión configurada de Zippy
   merchantCommission: CommissionBreakdown;
 
-  // Impuestos aplicados
-  taxes: TaxBreakdown[];
-  totalTaxes: number;
-
-  // Comisión total de Zippy
-  totalMerchantCommission: number;
-
-  // Comisión del PSP a Zippy
+  // Comisión del PSP
   pspCommission: PSPCommissionBreakdown;
 
-  // Resumen financiero
-  merchantReceives: number; // Lo que recibe el merchant (monto original - todo lo cobrado)
-  zippyRevenue: number; // Total que cobra Zippy al merchant (comisión Zippy + impuestos + comisión PSP)
-  zippyCost: number; // Lo que Zippy paga al PSP (pass-through)
-  zippyNetProfit: number; // Ganancia neta de Zippy (solo comisión Zippy + impuestos)
+  // Desglose de lo que cobra/gana Zippy
+  zippyBreakdown: ZippyBreakdown;
+
+  // Resultado final para el merchant
+  merchantReceives: number; // Monto original - total cobrado por Zippy
+  totalChargedToMerchant: number; // Total que se le cobra al merchant
 }

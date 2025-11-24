@@ -286,203 +286,142 @@ export function PaymentSimulator() {
       {result && (
         <Card>
           <CardHeader>
-            <CardTitle>Desglose del Pago</CardTitle>
+            <CardTitle>Resultado de la Simulación</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="rounded-lg bg-blue-50 p-4">
-              <p className="text-sm text-gray-600">Monto de Transacción</p>
-              <p className="text-2xl font-bold">
-                {formatCurrency(result.transactionAmount, result.currency)}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-semibold">Comisión Zippy → Merchant</h3>
-              <div className="space-y-1 border-l-2 border-blue-500 pl-4">
-                <div className="flex justify-between text-sm">
-                  <span>Tipo: {result.merchantCommission.type}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Comisión Base</span>
-                  <span className="font-mono">
-                    {formatCurrency(
-                      result.merchantCommission.baseAmount,
-                      result.currency
-                    )}
+            {/* SECCIÓN PRINCIPAL: Lo que recibe el Merchant */}
+            <div className="rounded-lg border-2 border-green-500 bg-green-50 p-4">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Monto de Transacción</span>
+                  <span className="font-mono text-xl font-bold">
+                    {formatCurrency(result.transactionAmount, result.currency)}
                   </span>
                 </div>
-                {result.merchantCommission.vatAmount > 0 && (
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>VAT/IVA</span>
-                    <span className="font-mono">
-                      {formatCurrency(
-                        result.merchantCommission.vatAmount,
-                        result.currency
-                      )}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between border-t pt-1 font-semibold">
-                  <span>Total Comisión</span>
-                  <span className="font-mono">
-                    {formatCurrency(
-                      result.merchantCommission.subtotal,
-                      result.currency
-                    )}
+                <div className="flex justify-between items-center text-red-600">
+                  <span>(-) Comisión Zippy</span>
+                  <span className="font-mono font-semibold">
+                    -{formatCurrency(result.totalChargedToMerchant, result.currency)}
                   </span>
                 </div>
-                {result.merchantCommission.percentage && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    Tarifa efectiva: {(result.merchantCommission.percentage * 100).toFixed(2)}%
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {result.taxes.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-semibold">Impuestos</h3>
-                <div className="space-y-1 border-l-2 border-yellow-500 pl-4">
-                  {result.taxes.map((tax) => (
-                    <div key={tax.taxCode} className="flex justify-between text-sm">
-                      <span>
-                        {tax.taxName} ({(tax.rate * 100).toFixed(2)}%)
-                      </span>
-                      <span className="font-mono">
-                        {formatCurrency(tax.amount, result.currency)}
-                      </span>
-                    </div>
-                  ))}
-                  <div className="flex justify-between border-t pt-1 font-semibold">
-                    <span>Total Impuestos</span>
-                    <span className="font-mono">
-                      {formatCurrency(result.totalTaxes, result.currency)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="rounded-lg bg-red-50 p-3">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Total Comisión Merchant</span>
-                <span className="font-mono text-xl font-bold text-red-700">
-                  {formatCurrency(
-                    result.totalMerchantCommission,
-                    result.currency
-                  )}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-semibold">Comisión PSP</h3>
-              <div className="space-y-1 border-l-2 border-purple-500 pl-4">
-                <div className="flex justify-between text-sm">
-                  <span>Proveedor</span>
-                  <span className="font-semibold">
-                    {result.pspCommission.pspName}
-                  </span>
-                </div>
-                {result.pspCommission.percentage && (
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>
-                      Porcentaje ({(result.pspCommission.percentage * 100).toFixed(2)}%)
-                    </span>
-                  </div>
-                )}
-                {result.pspCommission.fixedFee && (
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>Tarifa Fija</span>
-                    <span className="font-mono">
-                      {formatCurrency(result.pspCommission.fixedFee, result.currency)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between border-t pt-1 font-semibold">
-                  <span>Total Costo PSP</span>
-                  <span className="font-mono text-purple-700">
-                    {formatCurrency(result.pspCommission.amount, result.currency)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3 border-t-2 pt-4">
-              <h3 className="text-lg font-bold">Resumen Financiero</h3>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="rounded-lg bg-green-50 p-3">
-                  <p className="mb-1 text-xs text-gray-600">Merchant Recibe</p>
-                  <p className="font-mono text-base font-bold text-green-700">
-                    {formatCurrency(result.merchantReceives, result.currency)}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    (Monto - Total cobrado)
-                  </p>
-                </div>
-
-                <div className="rounded-lg bg-blue-50 p-3">
-                  <p className="mb-1 text-xs text-gray-600">Zippy Cobra Total</p>
-                  <p className="font-mono text-base font-bold text-blue-700">
-                    {formatCurrency(result.zippyRevenue, result.currency)}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    (Comisión + VAT + PSP)
-                  </p>
-                </div>
-
-                <div className="rounded-lg bg-purple-50 p-3">
-                  <p className="mb-1 text-xs text-gray-600">Zippy Paga a PSP</p>
-                  <p className="font-mono text-base font-bold text-purple-700">
-                    {formatCurrency(result.zippyCost, result.currency)}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    (Pass-through)
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-lg bg-emerald-50 p-3">
-                <p className="mb-1 text-xs text-gray-600">Ganancia Neta Zippy</p>
-                <p className="font-mono text-lg font-bold text-emerald-700">
-                  {formatCurrency(result.zippyNetProfit, result.currency)}
-                </p>
-                <p className="mt-1 text-xs text-gray-500">
-                  (Comisión Zippy + VAT)
-                </p>
-              </div>
-
-              <div className="rounded-lg border-2 border-gray-200 bg-gray-50 p-3">
-                <p className="mb-2 text-xs font-semibold text-gray-700">
-                  Flujo de Dinero
-                </p>
-                <div className="space-y-1 text-xs">
-                  <div className="flex justify-between">
-                    <span>💰 Monto Original</span>
-                    <span className="font-mono font-semibold">
-                      {formatCurrency(result.transactionAmount, result.currency)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-red-600">
-                    <span>- Comisión Zippy (+ VAT)</span>
-                    <span className="font-mono">
-                      -{formatCurrency(result.totalMerchantCommission, result.currency)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-red-600">
-                    <span>- Comisión PSP</span>
-                    <span className="font-mono">
-                      -{formatCurrency(result.pspCommission.amount, result.currency)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-t pt-1 font-semibold text-green-600">
-                    <span>= Merchant recibe</span>
-                    <span className="font-mono">
+                <div className="border-t-2 border-green-500 pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-bold text-green-800">Merchant Recibe</span>
+                    <span className="font-mono text-2xl font-bold text-green-700">
                       {formatCurrency(result.merchantReceives, result.currency)}
                     </span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* SECCIÓN SECUNDARIA: Desglose de lo que cobra Zippy */}
+            <div className="rounded-lg border bg-gray-50 p-4">
+              <h3 className="mb-4 text-lg font-bold text-gray-800">Desglose Comisión Zippy</h3>
+
+              <div className="space-y-4">
+                {/* Comisión Bruta de Zippy */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Comisión Bruta Zippy</span>
+                    <span className="font-mono font-semibold">
+                      {formatCurrency(result.zippyBreakdown.grossCommission, result.currency)}
+                    </span>
+                  </div>
+                  <div className="pl-4 text-sm text-gray-600">
+                    {result.merchantCommission.percentage && (
+                      <div className="flex justify-between">
+                        <span>Porcentaje ({(result.merchantCommission.percentage * 100).toFixed(2)}%)</span>
+                        <span className="font-mono">
+                          {formatCurrency(result.transactionAmount * result.merchantCommission.percentage, result.currency)}
+                        </span>
+                      </div>
+                    )}
+                    {result.merchantCommission.fixedFee && (
+                      <div className="flex justify-between">
+                        <span>Tarifa Fija</span>
+                        <span className="font-mono">
+                          {formatCurrency(result.merchantCommission.fixedFee, result.currency)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Comisión del PSP */}
+                <div className="flex justify-between items-center text-purple-700">
+                  <span className="font-medium">
+                    (-) Comisión PSP ({result.pspCommission.pspName})
+                    {result.pspCommission.percentage && (
+                      <span className="ml-1 text-sm">
+                        ({(result.pspCommission.percentage * 100).toFixed(2)}%)
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-mono font-semibold">
+                    -{formatCurrency(result.zippyBreakdown.pspCost, result.currency)}
+                  </span>
+                </div>
+
+                {/* Ganancia Neta */}
+                <div className="border-t pt-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-emerald-700">Ganancia Neta Zippy</span>
+                    <span className="font-mono font-semibold text-emerald-700">
+                      {formatCurrency(result.zippyBreakdown.netProfit, result.currency)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* VAT sobre ganancia neta */}
+                {result.zippyBreakdown.vatPercentage && result.zippyBreakdown.vatAmount > 0 && (
+                  <div className="rounded bg-yellow-50 p-3">
+                    <div className="flex justify-between items-center text-yellow-800">
+                      <span className="font-medium">
+                        (+) IVA ({(result.zippyBreakdown.vatPercentage * 100).toFixed(0)}% sobre ganancia neta)
+                      </span>
+                      <span className="font-mono font-semibold">
+                        +{formatCurrency(result.zippyBreakdown.vatAmount, result.currency)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-yellow-600">
+                      {formatCurrency(result.zippyBreakdown.netProfit, result.currency)} × {(result.zippyBreakdown.vatPercentage * 100).toFixed(0)}% = {formatCurrency(result.zippyBreakdown.vatAmount, result.currency)}
+                    </p>
+                  </div>
+                )}
+
+                {/* Total cobrado al merchant */}
+                <div className="border-t-2 border-gray-300 pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-gray-800">Total Cobrado al Merchant</span>
+                    <span className="font-mono text-lg font-bold text-red-600">
+                      {formatCurrency(result.totalChargedToMerchant, result.currency)}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Comisión Zippy ({formatCurrency(result.zippyBreakdown.grossCommission, result.currency)})
+                    + IVA ({formatCurrency(result.zippyBreakdown.vatAmount, result.currency)})
+                    + PSP ({formatCurrency(result.zippyBreakdown.pspCost, result.currency)})
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Resumen rápido */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg bg-blue-50 p-3">
+                <p className="text-xs text-gray-600">Zippy Cobra</p>
+                <p className="font-mono text-lg font-bold text-blue-700">
+                  {formatCurrency(result.zippyBreakdown.totalToCollect, result.currency)}
+                </p>
+                <p className="text-xs text-gray-500">(Comisión + IVA)</p>
+              </div>
+              <div className="rounded-lg bg-emerald-50 p-3">
+                <p className="text-xs text-gray-600">Ganancia Neta Zippy</p>
+                <p className="font-mono text-lg font-bold text-emerald-700">
+                  {formatCurrency(result.zippyBreakdown.netProfit, result.currency)}
+                </p>
+                <p className="text-xs text-gray-500">(Después de PSP)</p>
               </div>
             </div>
           </CardContent>

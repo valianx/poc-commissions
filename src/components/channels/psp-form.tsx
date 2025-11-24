@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,11 +30,14 @@ const pspFormSchema = z.object({
 type PSPFormData = z.infer<typeof pspFormSchema>;
 
 const AVAILABLE_COUNTRIES = ["AR", "BR", "CL", "CO", "MX", "PE", "UY", "PY", "BO", "EC", "VE"];
-const AVAILABLE_CHANNELS = ["credit_card", "debit_card", "pix", "webpay", "bank_transfer"];
 
 export function PSPForm() {
   const router = useRouter();
-  const { createPSP } = useChannelsStore();
+  const { createPSP, channels, fetchChannels } = useChannelsStore();
+
+  useEffect(() => {
+    fetchChannels();
+  }, [fetchChannels]);
 
   const {
     register,
@@ -199,9 +203,9 @@ export function PSPForm() {
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                       >
                         <option value="">Seleccionar canal</option>
-                        {AVAILABLE_CHANNELS.map(channel => (
-                          <option key={channel} value={channel}>
-                            {channel}
+                        {channels.filter(c => c.isActive).map(channel => (
+                          <option key={channel.code} value={channel.code}>
+                            {channel.name}
                           </option>
                         ))}
                       </select>

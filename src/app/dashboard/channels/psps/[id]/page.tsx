@@ -38,14 +38,13 @@ type CommissionEntry = {
 };
 
 const AVAILABLE_COUNTRIES = ["AR", "BR", "CL", "CO", "MX", "PE", "UY", "PY", "BO", "EC", "VE"];
-const AVAILABLE_CHANNELS = ["credit_card", "debit_card", "pix", "webpay", "bank_transfer"];
 
 export default function EditPSPPage() {
   const params = useParams();
   const router = useRouter();
   const pspId = params.id as string;
 
-  const { psps, updatePSP, fetchPSPs } = useChannelsStore();
+  const { psps, channels, updatePSP, fetchPSPs, fetchChannels } = useChannelsStore();
   const [commissions, setCommissions] = useState<CommissionEntry[]>([]);
   const [newChannel, setNewChannel] = useState("");
   const [newCountry, setNewCountry] = useState("");
@@ -54,7 +53,8 @@ export default function EditPSPPage() {
 
   useEffect(() => {
     fetchPSPs();
-  }, [fetchPSPs]);
+    fetchChannels();
+  }, [fetchPSPs, fetchChannels]);
 
   const psp = psps.find((p) => p.id === pspId);
 
@@ -273,8 +273,8 @@ export default function EditPSPPage() {
                     className="flex h-9 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
                   >
                     <option value="">Seleccionar</option>
-                    {AVAILABLE_CHANNELS.map(channel => (
-                      <option key={channel} value={channel}>{channel}</option>
+                    {channels.filter(c => c.isActive).map(channel => (
+                      <option key={channel.code} value={channel.code}>{channel.name}</option>
                     ))}
                   </select>
                 </div>

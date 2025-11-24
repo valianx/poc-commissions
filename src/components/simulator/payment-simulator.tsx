@@ -414,14 +414,12 @@ export function PaymentSimulator() {
                 <p className="font-mono text-lg font-bold text-blue-700">
                   {formatCurrency(result.zippyBreakdown.totalToCollect, result.currency)}
                 </p>
-                <p className="text-xs text-gray-500">(Comisión + IVA)</p>
               </div>
               <div className="rounded-lg bg-emerald-50 p-3">
                 <p className="text-xs text-gray-600">Ganancia Neta Zippy</p>
                 <p className="font-mono text-lg font-bold text-emerald-700">
                   {formatCurrency(result.zippyBreakdown.netProfit, result.currency)}
                 </p>
-                <p className="text-xs text-gray-500">(Después de PSP)</p>
               </div>
             </div>
           </CardContent>

@@ -1,9 +1,10 @@
 import { BaseRepository } from "./base.repository";
 import { MerchantChannelConfig } from "@/types/merchant-channel-config";
+import { STORAGE_KEYS } from "@/types/storage";
 
 class MerchantChannelConfigRepository extends BaseRepository<MerchantChannelConfig> {
   constructor() {
-    super("merchant-channel-configs");
+    super(STORAGE_KEYS.MERCHANT_CHANNEL_CONFIGS);
   }
 
   findByMerchant(merchantId: string): MerchantChannelConfig[] {

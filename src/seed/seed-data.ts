@@ -1256,12 +1256,16 @@ export function seedDatabase() {
     },
   ];
 
-  // Create merchant channel configurations
+  // Create merchant channel configurations - Each commission assignment needs its config
   const merchantChannelConfigs: MerchantChannelConfig[] = [
-    // 1XBET - Chile - Webpay - Transbank
+    // ==========================================
+    // 1XBET - 6 países (CL, BR, PE, AR, MX, CO)
+    // ==========================================
+
+    // 1XBET - Chile (CL) - 4 canales
     {
       id: uuidv4(),
-      merchantId: merchants[0].id, // 1XBET
+      merchantId: merchants[0].id,
       countryCode: "CL",
       channelId: channels.find((c) => c.code === "webpay")!.id,
       pspId: psps[2].id, // Transbank
@@ -1271,10 +1275,47 @@ export function seedDatabase() {
       updatedAt: new Date().toISOString(),
       deletedAt: null,
     },
-    // 1XBET - Brazil - PIX - MercadoPago
     {
       id: uuidv4(),
-      merchantId: merchants[0].id, // 1XBET
+      merchantId: merchants[0].id,
+      countryCode: "CL",
+      channelId: channels.find((c) => c.code === "credit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "CL",
+      channelId: channels.find((c) => c.code === "debit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "CL",
+      channelId: channels.find((c) => c.code === "crypto")!.id,
+      pspId: psps[3].id, // CryptoPay
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+
+    // 1XBET - Brasil (BR) - 4 canales
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
       countryCode: "BR",
       channelId: channels.find((c) => c.code === "pix")!.id,
       pspId: psps[1].id, // MercadoPago
@@ -1284,10 +1325,47 @@ export function seedDatabase() {
       updatedAt: new Date().toISOString(),
       deletedAt: null,
     },
-    // 1XBET - Peru - Credit Card - PayU
     {
       id: uuidv4(),
-      merchantId: merchants[0].id, // 1XBET
+      merchantId: merchants[0].id,
+      countryCode: "BR",
+      channelId: channels.find((c) => c.code === "credit_card")!.id,
+      pspId: psps[1].id, // MercadoPago
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "BR",
+      channelId: channels.find((c) => c.code === "debit_card")!.id,
+      pspId: psps[1].id, // MercadoPago
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "BR",
+      channelId: channels.find((c) => c.code === "crypto")!.id,
+      pspId: psps[3].id, // CryptoPay
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+
+    // 1XBET - Perú (PE) - 3 canales
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
       countryCode: "PE",
       channelId: channels.find((c) => c.code === "credit_card")!.id,
       pspId: psps[0].id, // PayU
@@ -1297,21 +1375,357 @@ export function seedDatabase() {
       updatedAt: new Date().toISOString(),
       deletedAt: null,
     },
-    // BetWarrior configurations
     {
       id: uuidv4(),
-      merchantId: merchants[1].id, // BetWarrior
+      merchantId: merchants[0].id,
+      countryCode: "PE",
+      channelId: channels.find((c) => c.code === "debit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "PE",
+      channelId: channels.find((c) => c.code === "crypto")!.id,
+      pspId: psps[3].id, // CryptoPay
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+
+    // 1XBET - Argentina (AR) - 3 canales
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "AR",
+      channelId: channels.find((c) => c.code === "credit_card")!.id,
+      pspId: psps[1].id, // MercadoPago
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "AR",
+      channelId: channels.find((c) => c.code === "debit_card")!.id,
+      pspId: psps[1].id, // MercadoPago
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "AR",
+      channelId: channels.find((c) => c.code === "crypto")!.id,
+      pspId: psps[3].id, // CryptoPay
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+
+    // 1XBET - México (MX) - 3 canales
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "MX",
+      channelId: channels.find((c) => c.code === "credit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "MX",
+      channelId: channels.find((c) => c.code === "crypto")!.id,
+      pspId: psps[3].id, // CryptoPay
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "MX",
+      channelId: channels.find((c) => c.code === "bank_transfer")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+
+    // 1XBET - Colombia (CO) - 3 canales
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "CO",
+      channelId: channels.find((c) => c.code === "credit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "CO",
+      channelId: channels.find((c) => c.code === "debit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[0].id,
+      countryCode: "CO",
+      channelId: channels.find((c) => c.code === "crypto")!.id,
+      pspId: psps[3].id, // CryptoPay
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+
+    // ==========================================
+    // BetWarrior - 5 países (CL, PE, CO, BR, AR)
+    // ==========================================
+
+    // BetWarrior - Chile (CL) - 4 canales
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
       countryCode: "CL",
       channelId: channels.find((c) => c.code === "credit_card")!.id,
       pspId: psps[0].id, // PayU
-      taxes: [
-        {
-          taxCode: "IVA",
-          taxName: "Impuesto al Valor Agregado",
-          rate: 0.19,
-          isActive: true,
-        },
-      ],
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "CL",
+      channelId: channels.find((c) => c.code === "debit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "CL",
+      channelId: channels.find((c) => c.code === "bank_transfer")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "CL",
+      channelId: channels.find((c) => c.code === "crypto")!.id,
+      pspId: psps[3].id, // CryptoPay
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+
+    // BetWarrior - Perú (PE) - 3 canales
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "PE",
+      channelId: channels.find((c) => c.code === "credit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "PE",
+      channelId: channels.find((c) => c.code === "debit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "PE",
+      channelId: channels.find((c) => c.code === "crypto")!.id,
+      pspId: psps[3].id, // CryptoPay
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+
+    // BetWarrior - Colombia (CO) - 3 canales
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "CO",
+      channelId: channels.find((c) => c.code === "credit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "CO",
+      channelId: channels.find((c) => c.code === "debit_card")!.id,
+      pspId: psps[0].id, // PayU
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "CO",
+      channelId: channels.find((c) => c.code === "crypto")!.id,
+      pspId: psps[3].id, // CryptoPay
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+
+    // BetWarrior - Brasil (BR) - 4 canales
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "BR",
+      channelId: channels.find((c) => c.code === "pix")!.id,
+      pspId: psps[1].id, // MercadoPago
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "BR",
+      channelId: channels.find((c) => c.code === "credit_card")!.id,
+      pspId: psps[1].id, // MercadoPago
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "BR",
+      channelId: channels.find((c) => c.code === "debit_card")!.id,
+      pspId: psps[1].id, // MercadoPago
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "BR",
+      channelId: channels.find((c) => c.code === "crypto")!.id,
+      pspId: psps[3].id, // CryptoPay
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+
+    // BetWarrior - Argentina (AR) - 3 canales
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "AR",
+      channelId: channels.find((c) => c.code === "credit_card")!.id,
+      pspId: psps[1].id, // MercadoPago
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "AR",
+      channelId: channels.find((c) => c.code === "debit_card")!.id,
+      pspId: psps[1].id, // MercadoPago
+      taxes: [],
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+    },
+    {
+      id: uuidv4(),
+      merchantId: merchants[1].id,
+      countryCode: "AR",
+      channelId: channels.find((c) => c.code === "crypto")!.id,
+      pspId: psps[3].id, // CryptoPay
+      taxes: [],
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

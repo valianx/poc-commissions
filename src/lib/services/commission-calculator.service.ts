@@ -155,17 +155,19 @@ export class CommissionCalculatorService {
       pspFixedFee = pspCommissionConfig.fixedValue;
     }
 
-    // 5. Calcular desglose de Zippy con nueva lógica:
-    // - Ganancia neta = Comisión bruta - Costo PSP
-    // - VAT = % sobre ganancia neta
-    // - Total a cobrar = Comisión bruta + VAT
-    const netProfit = grossCommission - pspAmount;
-    const vatAmount = vatPercentage ? netProfit * vatPercentage : 0;
-    const totalZippyCharge = grossCommission + vatAmount;
-
-    // 6. Total que paga el merchant = Comisión Zippy + VAT + Costo PSP
-    const totalChargedToMerchant = totalZippyCharge + pspAmount;
+    // 5. Calcular desglose de Zippy:
+    // Total cobrado = grossCommission + pspAmount + VAT
+    // Ingreso Zippy = Total cobrado - PSP = grossCommission + VAT
+    // VAT se calcula sobre Ingreso Zippy (antes de IVA)
+    // Para sacar el IVA: Ingreso con IVA = grossCommission, entonces VAT = grossCommission * vatPercentage
+    const vatAmount = vatPercentage ? grossCommission * vatPercentage : 0;
+    const totalChargedToMerchant = grossCommission + pspAmount + vatAmount;
     const merchantReceives = simulation.amount - totalChargedToMerchant;
+
+    // Ingreso Zippy = Total cobrado - PSP
+    const ingresoZippy = totalChargedToMerchant - pspAmount; // = grossCommission + vatAmount
+    // Ganancia neta = Ingreso - IVA
+    const netProfit = ingresoZippy - vatAmount; // = grossCommission
 
     return {
       transactionAmount: simulation.amount,
@@ -189,7 +191,7 @@ export class CommissionCalculatorService {
         netProfit,
         vatPercentage,
         vatAmount,
-        totalToCollect: totalZippyCharge,
+        ingresoZippy,
       },
       merchantReceives,
       totalChargedToMerchant,

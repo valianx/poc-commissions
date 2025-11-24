@@ -21,12 +21,12 @@ export interface CommissionBreakdown {
 }
 
 export interface ZippyBreakdown {
-  grossCommission: number; // Comisión bruta que cobra Zippy al merchant
+  grossCommission: number; // Comisión bruta de Zippy (sin IVA)
   pspCost: number; // Lo que Zippy paga al PSP
-  netProfit: number; // Ganancia neta de Zippy (gross - psp)
+  ingresoZippy: number; // Total cobrado - PSP (grossCommission + vatAmount)
   vatPercentage: number | null; // Porcentaje de VAT (ej: 0.19)
-  vatAmount: number; // VAT sobre la ganancia neta
-  totalToCollect: number; // Total que cobra Zippy (gross + vat)
+  vatAmount: number; // VAT sobre grossCommission
+  netProfit: number; // Ganancia neta de Zippy (ingresoZippy - vatAmount = grossCommission)
 }
 
 export interface PSPCommissionBreakdown {

@@ -201,13 +201,13 @@ export default function ChannelDetailPage({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Asignación de PSPs por País</CardTitle>
+            <CardTitle>Asignación de Providers por País</CardTitle>
             <Button
               size="sm"
               onClick={() => setIsAddingAssignment(!isAddingAssignment)}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Asignar PSP
+              Asignar Provider
             </Button>
           </div>
         </CardHeader>
@@ -233,13 +233,13 @@ export default function ChannelDetailPage({
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">PSP</label>
+                    <label className="text-sm font-medium">Provider</label>
                     <select
                       value={selectedPSP}
                       onChange={(e) => setSelectedPSP(e.target.value)}
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <option value="">Seleccionar PSP</option>
+                      <option value="">Seleccionar provider</option>
                       {allPSPs
                         .filter((psp) => psp.isActive)
                         .map((psp) => (
@@ -273,7 +273,7 @@ export default function ChannelDetailPage({
 
           {(!channel.pspAssignments || channel.pspAssignments.length === 0) ? (
             <div className="py-10 text-center text-muted-foreground">
-              No hay PSPs asignados. Haz clic en "Asignar PSP" para comenzar.
+              No hay providers asignados. Haz clic en "Asignar Provider" para comenzar.
             </div>
           ) : (
             <div className="space-y-3">

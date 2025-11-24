@@ -367,7 +367,7 @@ export function MerchantChannelConfig({
                     Canal
                   </th>
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                    Proveedor (PSP)
+                    Provider
                   </th>
                   <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
                     País

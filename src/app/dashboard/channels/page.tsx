@@ -35,7 +35,7 @@ export default function ChannelsPage() {
   };
 
   const handleDeletePSP = (id: string, name: string) => {
-    if (confirm(`¿Está seguro de eliminar el PSP "${name}"?`)) {
+    if (confirm(`¿Está seguro de eliminar el provider "${name}"?`)) {
       deletePSP(id);
     }
   };
@@ -44,7 +44,7 @@ export default function ChannelsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Canales y PSPs</h1>
+          <h1 className="text-3xl font-bold">Canales y Payment Service Providers</h1>
           <p className="text-muted-foreground">
             Gestión de métodos de pago y proveedores de servicios
           </p>
@@ -58,7 +58,7 @@ export default function ChannelsPage() {
         >
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            {activeTab === "channels" ? "Nuevo Canal" : "Nuevo PSP"}
+            {activeTab === "channels" ? "Nuevo Canal" : "Nuevo Provider"}
           </Button>
         </Link>
       </div>
@@ -82,7 +82,7 @@ export default function ChannelsPage() {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          PSPs ({psps.length})
+          Providers ({psps.length})
         </button>
       </div>
 
@@ -175,7 +175,7 @@ export default function ChannelsPage() {
       {activeTab === "psps" && (
         <Card>
           <CardHeader>
-            <CardTitle>Payment Service Providers (PSPs)</CardTitle>
+            <CardTitle>Payment Service Providers</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="rounded-md border">
@@ -196,7 +196,7 @@ export default function ChannelsPage() {
                         colSpan={5}
                         className="text-center text-muted-foreground"
                       >
-                        No hay PSPs registrados
+                        No hay providers registrados
                       </TableCell>
                     </TableRow>
                   ) : (

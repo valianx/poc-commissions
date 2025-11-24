@@ -14,9 +14,9 @@ export default function ClearStoragePage() {
       localStorage.clear();
       setCleared(true);
 
-      // Redirect to home after 2 seconds to trigger reseed
+      // Hard reload after 2 seconds to force Zustand stores to reinitialize
       setTimeout(() => {
-        router.push("/");
+        window.location.href = "/";
       }, 2000);
     }
   };

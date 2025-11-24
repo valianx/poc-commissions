@@ -182,6 +182,16 @@ export function seedDatabase() {
           isActive: true,
         },
         {
+          countryCode: "PE",
+          pspId: psps[0].id, // PayU for Peru
+          isActive: true,
+        },
+        {
+          countryCode: "BR",
+          pspId: psps[1].id, // MercadoPago for Brasil
+          isActive: true,
+        },
+        {
           countryCode: "AR",
           pspId: psps[1].id, // MercadoPago for Argentina
           isActive: true,
@@ -197,7 +207,13 @@ export function seedDatabase() {
       name: "Tarjeta de Débito",
       description: "Pagos con tarjetas de débito",
       isActive: true,
-      pspAssignments: [],
+      pspAssignments: [
+        {
+          countryCode: "CL",
+          pspId: psps[0].id, // PayU for Chile (has 1.9% commission)
+          isActive: true,
+        },
+      ],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,

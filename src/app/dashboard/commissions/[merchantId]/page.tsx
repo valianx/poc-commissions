@@ -105,6 +105,7 @@ export default function MerchantCommissionsPage() {
     const vat = assignment.vatPercentage || 0;
     const vatMultiplier = 1 + vat;
 
+    // Base commission
     if (assignment.basePercentageValue !== null && assignment.basePercentageValue !== undefined) {
       const totalPercentage = assignment.basePercentageValue * vatMultiplier;
       parts.push(`${(totalPercentage * 100).toFixed(2)}%`);
@@ -116,14 +117,69 @@ export default function MerchantCommissionsPage() {
 
     const commissionStr = parts.length > 0 ? parts.join(" + ") : "N/A";
 
+    // Build additional info for minimum commission and tier 2
+    const additionalInfo = [];
+
+    // Minimum commission range
+    if (assignment.minimumCommission && assignment.minimumCommission.isActive) {
+      const minComm = assignment.minimumCommission;
+      const minParts = [];
+      if (minComm.percentageValue !== null) {
+        const pct = minComm.percentageValue * vatMultiplier * 100;
+        minParts.push(`${pct.toFixed(2)}%`);
+      }
+      if (minComm.fixedValue !== null) {
+        const fixed = minComm.fixedValue * vatMultiplier;
+        minParts.push(`$${fixed.toFixed(2)}`);
+      }
+      if (minParts.length > 0) {
+        additionalInfo.push(
+          <div key="min" className="text-xs text-amber-700">
+            Rango ${minComm.minTransactionAmount.toLocaleString()}-${minComm.maxTransactionAmount.toLocaleString()}: {minParts.join(" + ")}
+          </div>
+        );
+      }
+    }
+
+    // Tier 2
+    if (assignment.tier2Commission && assignment.tier2Commission.isActive) {
+      const tier2 = assignment.tier2Commission;
+      const tier2Parts = [];
+      if (tier2.percentageValue !== null) {
+        const pct = tier2.percentageValue * vatMultiplier * 100;
+        tier2Parts.push(`${pct.toFixed(2)}%`);
+      }
+      if (tier2.fixedValue !== null) {
+        const fixed = tier2.fixedValue * vatMultiplier;
+        tier2Parts.push(`$${fixed.toFixed(2)}`);
+      }
+      if (tier2Parts.length > 0) {
+        additionalInfo.push(
+          <div key="tier2" className="text-xs text-green-700">
+            Tier 2 (≥${tier2.cumulativeThreshold.toLocaleString()}): {tier2Parts.join(" + ")}
+          </div>
+        );
+      }
+    }
+
     // If VAT is applied, show it as a note
     if (vat > 0 && parts.length > 0) {
       return (
         <div className="space-y-1">
           <div className="font-mono text-sm font-semibold">{commissionStr}</div>
+          {additionalInfo}
           <div className="text-xs text-muted-foreground">
             (incluye {(vat * 100).toFixed(1)}% VAT)
           </div>
+        </div>
+      );
+    }
+
+    if (additionalInfo.length > 0) {
+      return (
+        <div className="space-y-1">
+          <div className="font-mono text-sm font-semibold">{commissionStr}</div>
+          {additionalInfo}
         </div>
       );
     }

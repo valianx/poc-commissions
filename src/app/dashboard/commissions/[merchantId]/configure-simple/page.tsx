@@ -493,14 +493,14 @@ export default function ConfigureSimpleCommissionPage() {
           </CardContent>
         </Card>
 
-        {/* Minimum Commission */}
+        {/* Minimum Commission - for small transactions */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Comisión Mínima (Opcional)</CardTitle>
+                <CardTitle>Comisión por Rango Mínimo (Opcional)</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Aplica una comisión diferente cuando el monto de la transacción está dentro de un rango específico
+                  Aplica una comisión diferente para transacciones de monto bajo (dentro del rango especificado)
                 </p>
               </div>
               <label className="flex items-center gap-2">
@@ -515,9 +515,16 @@ export default function ConfigureSimpleCommissionPage() {
           </CardHeader>
           {enableMinimumCommission && (
             <CardContent className="space-y-4">
+              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 mb-4">
+                <p className="text-sm text-blue-900">
+                  <strong>¿Cómo funciona?</strong> Si la transacción está dentro de este rango, se aplica esta comisión.
+                  Si está fuera del rango, se aplica la Comisión Base.
+                </p>
+              </div>
+
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="minTransactionAmount">Monto Mínimo de Transacción *</Label>
+                  <Label htmlFor="minTransactionAmount">Desde (monto mínimo) *</Label>
                   <Input
                     id="minTransactionAmount"
                     type="number"
@@ -526,38 +533,44 @@ export default function ConfigureSimpleCommissionPage() {
                     placeholder="Ej: 0"
                     {...register("minTransactionAmount")}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Transacciones mayores o iguales a este monto
+                  </p>
                   {errors.minTransactionAmount && (
                     <p className="text-sm text-red-500">{errors.minTransactionAmount.message}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="maxTransactionAmount">Monto Máximo de Transacción *</Label>
+                  <Label htmlFor="maxTransactionAmount">Hasta (monto máximo) *</Label>
                   <Input
                     id="maxTransactionAmount"
                     type="number"
                     step="0.01"
                     min="0"
-                    placeholder="Ej: 10000"
+                    placeholder="Ej: 100000"
                     {...register("maxTransactionAmount")}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Transacciones menores o iguales a este monto
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="minPercentageValue">Comisión Porcentual (%)</Label>
+                  <Label htmlFor="minPercentageValue">Comisión para este rango (%)</Label>
                   <Input
                     id="minPercentageValue"
                     type="number"
                     step="0.01"
                     min="0"
                     max="100"
-                    placeholder="Ej: 2.0"
+                    placeholder="Ej: 6"
                     {...register("minPercentageValue")}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="minFixedValue">Comisión Fija</Label>
+                  <Label htmlFor="minFixedValue">Comisión Fija para este rango</Label>
                   <Input
                     id="minFixedValue"
                     type="number"
@@ -571,8 +584,8 @@ export default function ConfigureSimpleCommissionPage() {
 
               <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
                 <p className="text-sm text-amber-900">
-                  <strong>Ejemplo:</strong> Si configura rango 0-10,000 con 2% fijo, las transacciones menores a 10,000
-                  aplicarán esta comisión en lugar de la base.
+                  <strong>Ejemplo:</strong> Si configura rango 0-100,000 con 6%, las transacciones de hasta $100,000
+                  cobrarán 6%. Las transacciones superiores a $100,000 cobrarán la Comisión Base (ej: 5%).
                 </p>
               </div>
             </CardContent>

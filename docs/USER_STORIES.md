@@ -296,21 +296,27 @@ Vacío/Otro = Cancelar operación
 
 *Al menos uno de los dos debe tener valor
 
-#### Sección 3: Comisión Mínima (Opcional)
+#### Sección 3: Comisión por Rango Mínimo (Opcional)
 
-Aplica cuando el monto de la transacción está dentro de un rango específico.
+Aplica una comisión diferente para transacciones de monto bajo (dentro del rango especificado). Las transacciones fuera del rango aplican la Comisión Base.
 
 | Campo | Tipo | Requerido | Formato/Validación |
 |-------|------|-----------|-------------------|
 | Habilitar | Checkbox | No | - |
-| Monto Mínimo Transacción | Número | Si habilitado | >= 0 |
-| Monto Máximo Transacción | Número | Si habilitado | > Monto Mínimo |
-| Comisión Porcentual | Número | Condicional* | 0-100 |
-| Comisión Fija | Número | Condicional* | >= 0 |
+| Desde (Monto Mínimo) | Número | Si habilitado | >= 0 |
+| Hasta (Monto Máximo) | Número | Si habilitado | > Monto Mínimo |
+| Comisión para este rango (%) | Número | Condicional* | 0-100 |
+| Comisión Fija para este rango | Número | Condicional* | >= 0 |
 
 *Al menos uno si está habilitado
 
-**Ejemplo:** Si rango es 0-10,000 con 2% fijo, las transacciones <= 10,000 aplican esta comisión en lugar de la base.
+**Ejemplo:**
+
+- Rango Mínimo: 0 a 100,000 → Comisión 6%
+- Fuera del rango (> 100,000) → Comisión Base 5%
+
+Una transacción de $50,000 cobrará 6% (está dentro del rango).
+Una transacción de $150,000 cobrará 5% (está fuera del rango, usa la base).
 
 #### Sección 4: Comisión Tier 2 (Opcional)
 

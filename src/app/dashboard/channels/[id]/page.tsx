@@ -230,50 +230,6 @@ export default function ChannelDetailPage({
     }
   };
 
-  const handleRemoveAssignment = (countryCode: string, pspId: string) => {
-    const pspName = getPSPName(pspId);
-    const countryName = getCountryName(countryCode);
-    const currentAssignments = channel.pspAssignments || [];
-    const assignmentToRemove = currentAssignments.find(
-      (a) => a.countryCode === countryCode && a.pspId === pspId
-    );
-
-    if (!assignmentToRemove) return;
-
-    // If it's active, warn that it will affect merchants
-    if (assignmentToRemove.isActive) {
-      if (
-        confirm(
-          `¿Está seguro de eliminar la asignación activa de ${pspName} para ${countryName}?\n\n` +
-          `Nota: Las configuraciones de merchants que usan este provider en este país permanecerán pero quedarán sin provider activo asignado.`
-        )
-      ) {
-        const updatedAssignments = currentAssignments.filter(
-          (a) => !(a.countryCode === countryCode && a.pspId === pspId)
-        );
-
-        updateChannel(channel.id, {
-          pspAssignments: updatedAssignments,
-        });
-      }
-    } else {
-      // If inactive, just remove without special warning
-      if (
-        confirm(
-          `¿Está seguro de eliminar la asignación inactiva de ${pspName} para ${countryName}?`
-        )
-      ) {
-        const updatedAssignments = currentAssignments.filter(
-          (a) => !(a.countryCode === countryCode && a.pspId === pspId)
-        );
-
-        updateChannel(channel.id, {
-          pspAssignments: updatedAssignments,
-        });
-      }
-    }
-  };
-
   const getCountryName = (code: string) => {
     return COUNTRIES.find((c) => c.code === code)?.name || code;
   };
@@ -455,16 +411,6 @@ export default function ChannelDetailPage({
                       }
                     >
                       {assignment.isActive ? "Desactivar" : "Activar"}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        handleRemoveAssignment(assignment.countryCode, assignment.pspId)
-                      }
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Eliminar
                     </Button>
                   </div>
                 </div>

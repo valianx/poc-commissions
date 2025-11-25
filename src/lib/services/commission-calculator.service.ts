@@ -38,16 +38,38 @@ export class CommissionCalculatorService {
 
       if (assignment.basePercentageValue !== undefined || assignment.baseFixedValue !== undefined) {
         // Modelo nuevo: valores directos
-        let rangeFound = false;
+        let useMinimumCommission = false;
 
-        if (assignment.commissionRanges && assignment.commissionRanges.length > 0) {
+        // Check if minimum commission applies (transaction amount within range)
+        if (assignment.minimumCommission && assignment.minimumCommission.isActive) {
+          const minComm = assignment.minimumCommission;
+          if (simulation.amount >= minComm.minTransactionAmount &&
+              simulation.amount <= minComm.maxTransactionAmount) {
+            useMinimumCommission = true;
+            const percentageComm = (minComm.percentageValue || 0) * simulation.amount;
+            const fixedComm = minComm.fixedValue || 0;
+            grossCommission += percentageComm + fixedComm;
+
+            if (minComm.percentageValue) {
+              totalPercentage += minComm.percentageValue;
+              hasPercentage = true;
+            }
+            if (minComm.fixedValue) {
+              totalFixedFee += minComm.fixedValue;
+              hasFixed = true;
+            }
+          }
+        }
+
+        // Legacy: Check commission ranges (deprecated but kept for backward compatibility)
+        if (!useMinimumCommission && assignment.commissionRanges && assignment.commissionRanges.length > 0) {
           const matchingRange = assignment.commissionRanges.find(range => {
             const isInRange = simulation.amount >= range.minAmount && simulation.amount <= range.maxAmount;
             return isInRange && range.isActive;
           });
 
           if (matchingRange) {
-            rangeFound = true;
+            useMinimumCommission = true;
             const percentageComm = (matchingRange.percentageValue || 0) * simulation.amount;
             const fixedComm = matchingRange.fixedValue || 0;
             grossCommission += percentageComm + fixedComm;
@@ -63,7 +85,11 @@ export class CommissionCalculatorService {
           }
         }
 
-        if (!rangeFound) {
+        // Use base commission if no minimum/range commission was applied
+        if (!useMinimumCommission) {
+          // TODO: Check tier 2 threshold when cumulative amounts are tracked
+          // For now, tier 2 is informational only - would need transaction tracking to implement
+
           const percentageComm = (assignment.basePercentageValue || 0) * simulation.amount;
           const fixedComm = assignment.baseFixedValue || 0;
           grossCommission += percentageComm + fixedComm;

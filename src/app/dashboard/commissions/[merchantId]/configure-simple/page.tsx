@@ -10,13 +10,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Building2, MapPin, CreditCard, Save, Plus, X } from "lucide-react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { ArrowLeft, Building2, MapPin, CreditCard, Save, TrendingUp } from "lucide-react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { v4 as uuidv4 } from "uuid";
 
-// Form schema with commission ranges
+// Form schema with minimum commission and tier 2
 const configureSimpleCommissionSchema = z.object({
   countryCode: z.string().length(2, "Código de país inválido"),
   channelCode: z.string().min(1, "Debe seleccionar un canal"),
@@ -28,13 +27,17 @@ const configureSimpleCommissionSchema = z.object({
   basePercentageValue: z.string().optional(),
   baseFixedValue: z.string().optional(),
   assignedBy: z.string().email("Debe ser un email válido"),
-  commissionRanges: z.array(z.object({
-    minAmount: z.string().min(1, "Monto mínimo requerido"),
-    maxAmount: z.string().min(1, "Monto máximo requerido"),
-    percentageValue: z.string().optional(),
-    fixedValue: z.string().optional(),
-    // Ranges don't have dates, only isActive flag
-  })).optional(),
+  // Minimum commission (optional - single range)
+  enableMinimumCommission: z.boolean().optional(),
+  minTransactionAmount: z.string().optional(),
+  maxTransactionAmount: z.string().optional(),
+  minPercentageValue: z.string().optional(),
+  minFixedValue: z.string().optional(),
+  // Tier 2 commission (optional)
+  enableTier2: z.boolean().optional(),
+  tier2CumulativeThreshold: z.string().optional(),
+  tier2PercentageValue: z.string().optional(),
+  tier2FixedValue: z.string().optional(),
 }).refine(
   (data) => data.basePercentageValue || data.baseFixedValue,
   {
@@ -46,6 +49,28 @@ const configureSimpleCommissionSchema = z.object({
   {
     message: "La fecha de fin debe ser posterior a la fecha de inicio",
     path: ["endDate"],
+  }
+).refine(
+  (data) => {
+    if (data.enableMinimumCommission) {
+      return data.minTransactionAmount && data.maxTransactionAmount && (data.minPercentageValue || data.minFixedValue);
+    }
+    return true;
+  },
+  {
+    message: "Debe completar todos los campos de comisión mínima",
+    path: ["minTransactionAmount"],
+  }
+).refine(
+  (data) => {
+    if (data.enableTier2) {
+      return data.tier2CumulativeThreshold && (data.tier2PercentageValue || data.tier2FixedValue);
+    }
+    return true;
+  },
+  {
+    message: "Debe completar todos los campos de Tier 2",
+    path: ["tier2CumulativeThreshold"],
   }
 );
 
@@ -79,9 +104,9 @@ export default function ConfigureSimpleCommissionPage() {
   const {
     register,
     handleSubmit,
-    control,
     formState: { errors, isSubmitting },
     watch,
+    setValue,
   } = useForm<ConfigureSimpleCommissionFormData>({
     resolver: zodResolver(configureSimpleCommissionSchema),
     defaultValues: {
@@ -89,27 +114,32 @@ export default function ConfigureSimpleCommissionPage() {
       channelCode: preSelectedChannel || "",
       description: "",
       vatPercentage: "",
-      startDate: new Date().toISOString().split('T')[0], // Today's date
+      startDate: new Date().toISOString().split('T')[0],
       endDate: "",
       assignedBy: "admin@zippy.com",
-      commissionRanges: [],
+      enableMinimumCommission: false,
+      minTransactionAmount: "",
+      maxTransactionAmount: "",
+      minPercentageValue: "",
+      minFixedValue: "",
+      enableTier2: false,
+      tier2CumulativeThreshold: "",
+      tier2PercentageValue: "",
+      tier2FixedValue: "",
     },
   });
 
   // Log validation errors
   useEffect(() => {
     if (Object.keys(errors).length > 0) {
-      console.log("🔴 Validation errors:", errors);
+      console.log("Validation errors:", errors);
     }
   }, [errors]);
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "commissionRanges",
-  });
-
   const selectedCountry = watch("countryCode");
   const selectedChannel = watch("channelCode");
+  const enableMinimumCommission = watch("enableMinimumCommission");
+  const enableTier2 = watch("enableTier2");
 
   // Get merchant's configured channels
   const merchantConfigs = getConfigsByMerchant(merchantId);
@@ -153,21 +183,6 @@ export default function ConfigureSimpleCommissionPage() {
   const onSubmit = (data: ConfigureSimpleCommissionFormData) => {
     try {
       setSaveError(null);
-      console.log("📝 Form data received:", data);
-
-      // Process commission ranges (no dates, only isActive)
-      const processedRanges = data.commissionRanges?.map(range => ({
-        id: uuidv4(),
-        minAmount: parseFloat(range.minAmount),
-        maxAmount: parseFloat(range.maxAmount),
-        percentageValue: range.percentageValue
-          ? parseFloat(range.percentageValue) / 100
-          : null,
-        fixedValue: range.fixedValue
-          ? parseFloat(range.fixedValue)
-          : null,
-        isActive: true, // Ranges are active by default
-      })) || [];
 
       // Calculate status based on dates
       const startDate = data.startDate || new Date().toISOString();
@@ -178,6 +193,35 @@ export default function ConfigureSimpleCommissionPage() {
       if (start > now) {
         status = "SCHEDULED";
       }
+
+      // Build minimum commission if enabled
+      const minimumCommission = data.enableMinimumCommission && data.minTransactionAmount && data.maxTransactionAmount
+        ? {
+            minTransactionAmount: parseFloat(data.minTransactionAmount),
+            maxTransactionAmount: parseFloat(data.maxTransactionAmount),
+            percentageValue: data.minPercentageValue
+              ? parseFloat(data.minPercentageValue) / 100
+              : null,
+            fixedValue: data.minFixedValue
+              ? parseFloat(data.minFixedValue)
+              : null,
+            isActive: true,
+          }
+        : null;
+
+      // Build tier 2 commission if enabled
+      const tier2Commission = data.enableTier2 && data.tier2CumulativeThreshold
+        ? {
+            cumulativeThreshold: parseFloat(data.tier2CumulativeThreshold),
+            percentageValue: data.tier2PercentageValue
+              ? parseFloat(data.tier2PercentageValue) / 100
+              : null,
+            fixedValue: data.tier2FixedValue
+              ? parseFloat(data.tier2FixedValue)
+              : null,
+            isActive: true,
+          }
+        : null;
 
       const assignmentData = {
         merchantId,
@@ -195,25 +239,17 @@ export default function ConfigureSimpleCommissionPage() {
         baseFixedValue: data.baseFixedValue
           ? parseFloat(data.baseFixedValue)
           : null,
-        commissionRanges: processedRanges,
+        minimumCommission,
+        tier2Commission,
         status,
         assignedBy: data.assignedBy,
       };
 
-      console.log("💾 Saving assignment:", assignmentData);
-
       createAssignment(assignmentData);
-
-      console.log("✅ Assignment created, refetching...");
-
-      // Refetch to ensure we have the latest data
       fetchAssignments();
-
-      console.log("🔄 Redirecting to:", `/dashboard/commissions/${merchantId}`);
-
       router.push(`/dashboard/commissions/${merchantId}`);
     } catch (error) {
-      console.error("❌ Error creating commission assignment:", error);
+      console.error("Error creating commission assignment:", error);
       setSaveError(error instanceof Error ? error.message : "Error al guardar la comisión");
     }
   };
@@ -245,7 +281,7 @@ export default function ConfigureSimpleCommissionPage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit, (errors) => {
-        console.log("🔴 Form validation failed:", errors);
+        console.log("Form validation failed:", errors);
         setSaveError("Por favor complete todos los campos requeridos correctamente");
       })} className="space-y-6">
         {/* Merchant and Selection Info */}
@@ -329,9 +365,6 @@ export default function ConfigureSimpleCommissionPage() {
                 {...register("description")}
                 placeholder="Ej: Comisión especial para promoción navideña"
               />
-              <p className="text-xs text-muted-foreground">
-                Agregue una descripción opcional para explicar el propósito de esta comisión
-              </p>
             </div>
 
             {/* VAT Percentage Field */}
@@ -349,7 +382,7 @@ export default function ConfigureSimpleCommissionPage() {
                 placeholder="Ej: 19 (para 19% de IVA)"
               />
               <p className="text-xs text-muted-foreground">
-                El VAT se aplicará sobre la comisión base. Por ejemplo, si la comisión es 2% y el VAT es 19%, el total será 2% + (2% × 19%) = 2.38%
+                El VAT se aplicará sobre la comisión.
               </p>
             </div>
 
@@ -369,9 +402,6 @@ export default function ConfigureSimpleCommissionPage() {
                   {errors.startDate && (
                     <p className="text-sm text-red-500">{errors.startDate.message}</p>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    Fecha desde la cual esta comisión estará vigente
-                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -386,9 +416,6 @@ export default function ConfigureSimpleCommissionPage() {
                   {errors.endDate && (
                     <p className="text-sm text-red-500">{errors.endDate.message}</p>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    Dejar vacío para comisión sin fecha de expiración
-                  </p>
                 </div>
               </div>
             </div>
@@ -416,9 +443,9 @@ export default function ConfigureSimpleCommissionPage() {
         {/* Base Commission Values */}
         <Card>
           <CardHeader>
-            <CardTitle>Comisión Base (Permanente)</CardTitle>
+            <CardTitle>Comisión Base</CardTitle>
             <p className="text-sm text-muted-foreground">
-              La comisión base aplica siempre y no tiene fecha de vencimiento
+              La comisión estándar que se aplica a todas las transacciones
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -455,148 +482,181 @@ export default function ConfigureSimpleCommissionPage() {
                 <p className="text-xs text-muted-foreground">
                   Ingrese el monto fijo en la moneda del país
                 </p>
-                {errors.baseFixedValue && (
-                  <p className="text-sm text-red-500">{errors.baseFixedValue.message}</p>
-                )}
               </div>
             </div>
 
             <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
               <p className="text-sm text-blue-900">
                 <strong>Nota:</strong> Puede configurar solo porcentaje, solo fijo, o ambos.
-                Si configura ambos, se aplicarán las dos comisiones.
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Commission Ranges */}
+        {/* Minimum Commission */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Comisiones por Rango de Monto (Opcional)</CardTitle>
+                <CardTitle>Comisión Mínima (Opcional)</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Estas comisiones especiales pisan la comisión base cuando el monto de la transacción
-                  cae dentro del rango y está dentro de las fechas de vigencia
+                  Aplica una comisión diferente cuando el monto de la transacción está dentro de un rango específico
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => append({
-                  minAmount: "",
-                  maxAmount: "",
-                  percentageValue: "",
-                  fixedValue: "",
-                })}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar Rango
-              </Button>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  {...register("enableMinimumCommission")}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm font-medium">Habilitar</span>
+              </label>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {fields.length === 0 ? (
-              <p className="text-center text-sm text-muted-foreground py-8">
-                No hay rangos de comisión configurados. Haga clic en "Agregar Rango" para crear uno.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {fields.map((field, index) => (
-                  <div key={field.id} className="rounded-lg border p-4 space-y-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">Rango {index + 1}</h4>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => remove(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+          {enableMinimumCommission && (
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="minTransactionAmount">Monto Mínimo de Transacción *</Label>
+                  <Input
+                    id="minTransactionAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Ej: 0"
+                    {...register("minTransactionAmount")}
+                  />
+                  {errors.minTransactionAmount && (
+                    <p className="text-sm text-red-500">{errors.minTransactionAmount.message}</p>
+                  )}
+                </div>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor={`commissionRanges.${index}.minAmount`}>
-                          Monto Mínimo *
-                        </Label>
-                        <Input
-                          id={`commissionRanges.${index}.minAmount`}
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="Ej: 1000"
-                          {...register(`commissionRanges.${index}.minAmount`)}
-                        />
-                        {errors.commissionRanges?.[index]?.minAmount && (
-                          <p className="text-sm text-red-500">
-                            {errors.commissionRanges[index]?.minAmount?.message}
-                          </p>
-                        )}
-                      </div>
+                <div className="space-y-2">
+                  <Label htmlFor="maxTransactionAmount">Monto Máximo de Transacción *</Label>
+                  <Input
+                    id="maxTransactionAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Ej: 10000"
+                    {...register("maxTransactionAmount")}
+                  />
+                </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor={`commissionRanges.${index}.maxAmount`}>
-                          Monto Máximo *
-                        </Label>
-                        <Input
-                          id={`commissionRanges.${index}.maxAmount`}
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="Ej: 5000"
-                          {...register(`commissionRanges.${index}.maxAmount`)}
-                        />
-                        {errors.commissionRanges?.[index]?.maxAmount && (
-                          <p className="text-sm text-red-500">
-                            {errors.commissionRanges[index]?.maxAmount?.message}
-                          </p>
-                        )}
-                      </div>
+                <div className="space-y-2">
+                  <Label htmlFor="minPercentageValue">Comisión Porcentual (%)</Label>
+                  <Input
+                    id="minPercentageValue"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    placeholder="Ej: 2.0"
+                    {...register("minPercentageValue")}
+                  />
+                </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor={`commissionRanges.${index}.percentageValue`}>
-                          Comisión Porcentual (%)
-                        </Label>
-                        <Input
-                          id={`commissionRanges.${index}.percentageValue`}
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          max="100"
-                          placeholder="Ej: 2.5"
-                          {...register(`commissionRanges.${index}.percentageValue`)}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor={`commissionRanges.${index}.fixedValue`}>
-                          Comisión Fija
-                        </Label>
-                        <Input
-                          id={`commissionRanges.${index}.fixedValue`}
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="Ej: 300"
-                          {...register(`commissionRanges.${index}.fixedValue`)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="rounded-md border border-amber-200 bg-amber-50 p-2">
-                      <p className="text-xs text-amber-900">
-                        Al menos uno de los valores de comisión (porcentaje o fijo) debe ser especificado
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                <div className="space-y-2">
+                  <Label htmlFor="minFixedValue">Comisión Fija</Label>
+                  <Input
+                    id="minFixedValue"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Ej: 200"
+                    {...register("minFixedValue")}
+                  />
+                </div>
               </div>
-            )}
-          </CardContent>
+
+              <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+                <p className="text-sm text-amber-900">
+                  <strong>Ejemplo:</strong> Si configura rango 0-10,000 con 2% fijo, las transacciones menores a 10,000
+                  aplicarán esta comisión en lugar de la base.
+                </p>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+
+        {/* Tier 2 Commission */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+                <div>
+                  <CardTitle>Comisión Tier 2 (Opcional)</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Se activa cuando el merchant alcanza un monto acumulado de transacciones en este canal/país
+                  </p>
+                </div>
+              </div>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  {...register("enableTier2")}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <span className="text-sm font-medium">Habilitar</span>
+              </label>
+            </div>
+          </CardHeader>
+          {enableTier2 && (
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="tier2CumulativeThreshold">Umbral Acumulado *</Label>
+                <Input
+                  id="tier2CumulativeThreshold"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Ej: 1000000"
+                  {...register("tier2CumulativeThreshold")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Suma total de transacciones en el canal/país para desbloquear Tier 2
+                </p>
+                {errors.tier2CumulativeThreshold && (
+                  <p className="text-sm text-red-500">{errors.tier2CumulativeThreshold.message}</p>
+                )}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="tier2PercentageValue">Comisión Tier 2 Porcentual (%)</Label>
+                  <Input
+                    id="tier2PercentageValue"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    placeholder="Ej: 2.0"
+                    {...register("tier2PercentageValue")}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="tier2FixedValue">Comisión Tier 2 Fija</Label>
+                  <Input
+                    id="tier2FixedValue"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Ej: 300"
+                    {...register("tier2FixedValue")}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-md border border-green-200 bg-green-50 p-3">
+                <p className="text-sm text-green-900">
+                  <strong>Ejemplo:</strong> Si el umbral es 1,000,000 y el merchant ya procesó esa cantidad en este
+                  canal/país, se aplicará la comisión Tier 2 en lugar de la base.
+                </p>
+              </div>
+            </CardContent>
+          )}
         </Card>
 
         {/* Assigned By */}

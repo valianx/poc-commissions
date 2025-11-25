@@ -1,10 +1,9 @@
 import { z } from "zod";
 
-// Commission range schema for amount-based overrides
-// Note: Ranges inherit dates from parent assignment, only have isActive flag
-export const commissionRangeSchema = z.object({
-  minAmount: z.number().min(0, "El monto mínimo debe ser mayor o igual a 0"),
-  maxAmount: z.number().min(0, "El monto máximo debe ser mayor o igual a 0"),
+// Minimum commission schema - applies when transaction amount is within a specific range
+export const minimumCommissionSchema = z.object({
+  minTransactionAmount: z.number().min(0, "El monto mínimo debe ser mayor o igual a 0"),
+  maxTransactionAmount: z.number().min(0, "El monto máximo debe ser mayor o igual a 0"),
   percentageValue: z
     .number()
     .min(0)
@@ -18,13 +17,43 @@ export const commissionRangeSchema = z.object({
     message: "Debe especificar un valor porcentual y/o un valor fijo",
   }
 ).refine(
-  (data) => data.maxAmount > data.minAmount,
+  (data) => data.maxTransactionAmount > data.minTransactionAmount,
   {
     message: "El monto máximo debe ser mayor que el monto mínimo",
   }
 );
 
-// New simplified commission assignment schema (supports both new and legacy models)
+// Tier 2 commission schema - applies when merchant reaches cumulative threshold
+export const tier2CommissionSchema = z.object({
+  cumulativeThreshold: z.number().min(0, "El umbral debe ser mayor o igual a 0"),
+  percentageValue: z
+    .number()
+    .min(0)
+    .max(1, "El porcentaje debe estar entre 0 y 1")
+    .nullable(),
+  fixedValue: z.number().min(0, "El valor fijo debe ser mayor o igual a 0").nullable(),
+  isActive: z.boolean().default(true),
+}).refine(
+  (data) => data.percentageValue !== null || data.fixedValue !== null,
+  {
+    message: "Debe especificar un valor porcentual y/o un valor fijo",
+  }
+);
+
+// Legacy commission range schema (deprecated but kept for backward compatibility)
+export const commissionRangeSchema = z.object({
+  minAmount: z.number().min(0, "El monto mínimo debe ser mayor o igual a 0"),
+  maxAmount: z.number().min(0, "El monto máximo debe ser mayor o igual a 0"),
+  percentageValue: z
+    .number()
+    .min(0)
+    .max(1, "El porcentaje debe estar entre 0 y 1")
+    .nullable(),
+  fixedValue: z.number().min(0, "El valor fijo debe ser mayor o igual a 0").nullable(),
+  isActive: z.boolean().default(true),
+});
+
+// Commission assignment schema (supports both new and legacy models)
 export const commissionAssignmentSchema = z.object({
   merchantId: z.string().uuid("ID de merchant inválido"),
   countryCode: z
@@ -35,7 +64,7 @@ export const commissionAssignmentSchema = z.object({
   // Date range for validity
   startDate: z.string().datetime({ message: "Debe especificar una fecha de inicio válida" }),
   endDate: z.string().datetime().nullable().optional(),
-  // New model fields
+  // Base commission fields
   basePercentageValue: z
     .number()
     .min(0)
@@ -43,8 +72,11 @@ export const commissionAssignmentSchema = z.object({
     .nullable()
     .optional(),
   baseFixedValue: z.number().min(0, "El valor fijo debe ser mayor o igual a 0").nullable().optional(),
+  // New commission structures
+  minimumCommission: minimumCommissionSchema.nullable().optional(),
+  tier2Commission: tier2CommissionSchema.nullable().optional(),
+  // Legacy fields (deprecated)
   commissionRanges: z.array(commissionRangeSchema).optional(),
-  // Legacy model fields
   commissionTemplateId: z.string().uuid("ID de template inválido").optional(),
   status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED", "SCHEDULED"], {
     message: "Estado inválido",

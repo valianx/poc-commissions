@@ -382,7 +382,13 @@ export default function ChannelDetailPage({
             </div>
           ) : (
             <div className="space-y-3">
-              {channel.pspAssignments.map((assignment) => (
+              {[...channel.pspAssignments]
+                .sort((a, b) => {
+                  // Sort active first, inactive last
+                  if (a.isActive === b.isActive) return 0;
+                  return a.isActive ? -1 : 1;
+                })
+                .map((assignment) => (
                 <div
                   key={`${assignment.countryCode}-${assignment.pspId}`}
                   className="flex items-center justify-between rounded-lg border p-4"

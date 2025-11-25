@@ -90,14 +90,16 @@ export default function ChannelDetailPage({
       const newPSPName = getPSPName(selectedPSP);
       const countryName = getCountryName(selectedCountry);
 
-      const choice = confirm(
+      const choice = prompt(
         `Ya existe un provider activo (${existingPSPName}) para ${countryName}.\n\n` +
-        `¿Desea reemplazarlo con ${newPSPName}?\n\n` +
-        `• Aceptar: ${existingPSPName} será desactivado y ${newPSPName} será el nuevo provider activo.\n` +
-        `• Cancelar: ${newPSPName} será agregado como inactivo.`
+        `¿Qué desea hacer con ${newPSPName}?\n\n` +
+        `Escriba:\n` +
+        `  1 = Reemplazar (${existingPSPName} será desactivado, ${newPSPName} será activo)\n` +
+        `  2 = Agregar como inactivo (${existingPSPName} permanece activo)\n` +
+        `  Vacío o cualquier otro = Cancelar operación`
       );
 
-      if (choice) {
+      if (choice === "1") {
         // Deactivate existing and add new as active
         const updatedAssignments = currentAssignments.map((a) =>
           a.countryCode === selectedCountry && a.isActive
@@ -117,7 +119,7 @@ export default function ChannelDetailPage({
 
         // Sync merchant configs with the new active PSP
         syncPSPForChannel(channel.id, selectedCountry, selectedPSP);
-      } else {
+      } else if (choice === "2") {
         // Add new as inactive
         const newAssignment: ChannelPSPAssignment = {
           countryCode: selectedCountry,
@@ -129,6 +131,7 @@ export default function ChannelDetailPage({
           pspAssignments: [...currentAssignments, newAssignment],
         });
       }
+      // Any other value (including null/empty) = cancel, do nothing
     } else {
       // No active assignment for this country, add as active
       const newAssignment: ChannelPSPAssignment = {
@@ -172,8 +175,8 @@ export default function ChannelDetailPage({
 
         const choice = confirm(
           `Ya existe un provider activo (${existingPSPName}) para ${countryName}.\n\n` +
-          `¿Desea reemplazarlo con ${newPSPName}?\n\n` +
-          `• Aceptar: ${existingPSPName} será desactivado y ${newPSPName} será el nuevo provider activo.\n` +
+          `¿Desea activar ${newPSPName} y desactivar ${existingPSPName}?\n\n` +
+          `• OK: ${existingPSPName} será desactivado y ${newPSPName} será el nuevo provider activo.\n` +
           `• Cancelar: No se realizará ningún cambio.`
         );
 

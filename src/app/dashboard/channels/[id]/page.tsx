@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { use } from "react";
 import { useChannelsStore } from "@/lib/stores/channels.store";
+import { useMerchantChannelConfigStore } from "@/lib/stores/merchant-channel-config.store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,8 @@ export default function ChannelDetailPage({
   const { id } = use(params);
   const { getChannelById, getPSPById, fetchChannels, fetchPSPs, updateChannel } =
     useChannelsStore();
+  const { syncPSPForChannel, removeConfigsForChannel, fetchConfigs } =
+    useMerchantChannelConfigStore();
   const [isAddingAssignment, setIsAddingAssignment] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [selectedPSP, setSelectedPSP] = useState<string>("");
@@ -35,7 +38,8 @@ export default function ChannelDetailPage({
   useEffect(() => {
     fetchChannels();
     fetchPSPs();
-  }, [fetchChannels, fetchPSPs]);
+    fetchConfigs();
+  }, [fetchChannels, fetchPSPs, fetchConfigs]);
 
   const channel = getChannelById(id);
   const allPSPs = useChannelsStore((state) => state.psps);
@@ -60,32 +64,53 @@ export default function ChannelDetailPage({
 
   const handleAddAssignment = () => {
     if (!selectedCountry || !selectedPSP) {
-      alert("Debe seleccionar un país y un PSP");
+      alert("Debe seleccionar un país y un provider");
       return;
     }
 
     // Ensure pspAssignments exists
     const currentAssignments = channel.pspAssignments || [];
 
-    // Check if this specific PSP is already assigned to this country
-    const exists = currentAssignments.some(
-      (a) => a.countryCode === selectedCountry && a.pspId === selectedPSP
+    // Check if there's already any PSP assigned to this country
+    const existingAssignmentForCountry = currentAssignments.find(
+      (a) => a.countryCode === selectedCountry
     );
 
-    if (exists) {
-      alert("Este PSP ya está asignado a este país");
-      return;
+    if (existingAssignmentForCountry) {
+      // If it's the same PSP, don't allow
+      if (existingAssignmentForCountry.pspId === selectedPSP) {
+        alert("Este provider ya está asignado a este país");
+        return;
+      }
+
+      // Replace the existing PSP for this country
+      const updatedAssignments = currentAssignments.map((a) =>
+        a.countryCode === selectedCountry
+          ? { ...a, pspId: selectedPSP, isActive: true }
+          : a
+      );
+
+      updateChannel(channel.id, {
+        pspAssignments: updatedAssignments,
+      });
+
+      // Sync merchant configs with the new PSP
+      syncPSPForChannel(channel.id, selectedCountry, selectedPSP);
+    } else {
+      // Add new assignment
+      const newAssignment: ChannelPSPAssignment = {
+        countryCode: selectedCountry,
+        pspId: selectedPSP,
+        isActive: true,
+      };
+
+      updateChannel(channel.id, {
+        pspAssignments: [...currentAssignments, newAssignment],
+      });
+
+      // Sync merchant configs with the new PSP
+      syncPSPForChannel(channel.id, selectedCountry, selectedPSP);
     }
-
-    const newAssignment: ChannelPSPAssignment = {
-      countryCode: selectedCountry,
-      pspId: selectedPSP,
-      isActive: true,
-    };
-
-    updateChannel(channel.id, {
-      pspAssignments: [...currentAssignments, newAssignment],
-    });
 
     setSelectedCountry("");
     setSelectedPSP("");
@@ -111,7 +136,7 @@ export default function ChannelDetailPage({
 
     if (
       confirm(
-        `¿Está seguro de eliminar la asignación de ${pspName} para ${countryName}?`
+        `¿Está seguro de eliminar la asignación de ${pspName} para ${countryName}? Esto también eliminará las configuraciones de merchants asociadas.`
       )
     ) {
       const currentAssignments = channel.pspAssignments || [];
@@ -122,6 +147,9 @@ export default function ChannelDetailPage({
       updateChannel(channel.id, {
         pspAssignments: updatedAssignments,
       });
+
+      // Remove merchant configs for this channel+country
+      removeConfigsForChannel(channel.id, countryCode);
     }
   };
 

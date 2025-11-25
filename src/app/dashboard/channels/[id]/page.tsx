@@ -29,7 +29,7 @@ export default function ChannelDetailPage({
   const { id } = use(params);
   const { getChannelById, getPSPById, fetchChannels, fetchPSPs, updateChannel } =
     useChannelsStore();
-  const { syncPSPForChannel, removeConfigsForChannel, fetchConfigs } =
+  const { syncPSPForChannel, fetchConfigs } =
     useMerchantChannelConfigStore();
   const [isAddingAssignment, setIsAddingAssignment] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
@@ -68,36 +68,69 @@ export default function ChannelDetailPage({
       return;
     }
 
-    // Ensure pspAssignments exists
     const currentAssignments = channel.pspAssignments || [];
 
-    // Check if there's already any PSP assigned to this country
-    const existingAssignmentForCountry = currentAssignments.find(
-      (a) => a.countryCode === selectedCountry
+    // Check if this exact PSP+country combination already exists
+    const exactMatch = currentAssignments.find(
+      (a) => a.countryCode === selectedCountry && a.pspId === selectedPSP
     );
 
-    if (existingAssignmentForCountry) {
-      // If it's the same PSP, don't allow
-      if (existingAssignmentForCountry.pspId === selectedPSP) {
-        alert("Este provider ya está asignado a este país");
-        return;
-      }
+    if (exactMatch) {
+      alert("Este provider ya está asignado a este país");
+      return;
+    }
 
-      // Replace the existing PSP for this country
-      const updatedAssignments = currentAssignments.map((a) =>
-        a.countryCode === selectedCountry
-          ? { ...a, pspId: selectedPSP, isActive: true }
-          : a
+    // Check if there's an ACTIVE PSP assigned to this country
+    const activeAssignmentForCountry = currentAssignments.find(
+      (a) => a.countryCode === selectedCountry && a.isActive
+    );
+
+    if (activeAssignmentForCountry) {
+      const existingPSPName = getPSPName(activeAssignmentForCountry.pspId);
+      const newPSPName = getPSPName(selectedPSP);
+      const countryName = getCountryName(selectedCountry);
+
+      const choice = confirm(
+        `Ya existe un provider activo (${existingPSPName}) para ${countryName}.\n\n` +
+        `¿Desea reemplazarlo con ${newPSPName}?\n\n` +
+        `• Aceptar: ${existingPSPName} será desactivado y ${newPSPName} será el nuevo provider activo.\n` +
+        `• Cancelar: ${newPSPName} será agregado como inactivo.`
       );
 
-      updateChannel(channel.id, {
-        pspAssignments: updatedAssignments,
-      });
+      if (choice) {
+        // Deactivate existing and add new as active
+        const updatedAssignments = currentAssignments.map((a) =>
+          a.countryCode === selectedCountry && a.isActive
+            ? { ...a, isActive: false }
+            : a
+        );
 
-      // Sync merchant configs with the new PSP
-      syncPSPForChannel(channel.id, selectedCountry, selectedPSP);
+        const newAssignment: ChannelPSPAssignment = {
+          countryCode: selectedCountry,
+          pspId: selectedPSP,
+          isActive: true,
+        };
+
+        updateChannel(channel.id, {
+          pspAssignments: [...updatedAssignments, newAssignment],
+        });
+
+        // Sync merchant configs with the new active PSP
+        syncPSPForChannel(channel.id, selectedCountry, selectedPSP);
+      } else {
+        // Add new as inactive
+        const newAssignment: ChannelPSPAssignment = {
+          countryCode: selectedCountry,
+          pspId: selectedPSP,
+          isActive: false,
+        };
+
+        updateChannel(channel.id, {
+          pspAssignments: [...currentAssignments, newAssignment],
+        });
+      }
     } else {
-      // Add new assignment
+      // No active assignment for this country, add as active
       const newAssignment: ChannelPSPAssignment = {
         countryCode: selectedCountry,
         pspId: selectedPSP,
@@ -119,37 +152,122 @@ export default function ChannelDetailPage({
 
   const handleToggleAssignment = (countryCode: string, pspId: string) => {
     const currentAssignments = channel.pspAssignments || [];
-    const updatedAssignments = currentAssignments.map((assignment) =>
-      assignment.countryCode === countryCode && assignment.pspId === pspId
-        ? { ...assignment, isActive: !assignment.isActive }
-        : assignment
+    const currentAssignment = currentAssignments.find(
+      (a) => a.countryCode === countryCode && a.pspId === pspId
     );
 
-    updateChannel(channel.id, {
-      pspAssignments: updatedAssignments,
-    });
-  };
+    if (!currentAssignment) return;
 
-  const handleRemoveAssignment = (countryCode: string, pspId: string) => {
-    const pspName = getPSPName(pspId);
-    const countryName = getCountryName(countryCode);
+    // If trying to activate
+    if (!currentAssignment.isActive) {
+      // Check if there's another active PSP for this country
+      const otherActiveAssignment = currentAssignments.find(
+        (a) => a.countryCode === countryCode && a.isActive && a.pspId !== pspId
+      );
 
-    if (
-      confirm(
-        `¿Está seguro de eliminar la asignación de ${pspName} para ${countryName}? Esto también eliminará las configuraciones de merchants asociadas.`
-      )
-    ) {
-      const currentAssignments = channel.pspAssignments || [];
-      const updatedAssignments = currentAssignments.filter(
-        (a) => !(a.countryCode === countryCode && a.pspId === pspId)
+      if (otherActiveAssignment) {
+        const existingPSPName = getPSPName(otherActiveAssignment.pspId);
+        const newPSPName = getPSPName(pspId);
+        const countryName = getCountryName(countryCode);
+
+        const choice = confirm(
+          `Ya existe un provider activo (${existingPSPName}) para ${countryName}.\n\n` +
+          `¿Desea reemplazarlo con ${newPSPName}?\n\n` +
+          `• Aceptar: ${existingPSPName} será desactivado y ${newPSPName} será el nuevo provider activo.\n` +
+          `• Cancelar: No se realizará ningún cambio.`
+        );
+
+        if (choice) {
+          // Deactivate existing and activate the selected one
+          const updatedAssignments = currentAssignments.map((a) => {
+            if (a.countryCode === countryCode && a.pspId === otherActiveAssignment.pspId) {
+              return { ...a, isActive: false };
+            }
+            if (a.countryCode === countryCode && a.pspId === pspId) {
+              return { ...a, isActive: true };
+            }
+            return a;
+          });
+
+          updateChannel(channel.id, {
+            pspAssignments: updatedAssignments,
+          });
+
+          // Sync merchant configs with the new active PSP
+          syncPSPForChannel(channel.id, countryCode, pspId);
+        }
+        // If cancelled, do nothing
+        return;
+      }
+
+      // No other active assignment, just activate
+      const updatedAssignments = currentAssignments.map((a) =>
+        a.countryCode === countryCode && a.pspId === pspId
+          ? { ...a, isActive: true }
+          : a
       );
 
       updateChannel(channel.id, {
         pspAssignments: updatedAssignments,
       });
 
-      // Remove merchant configs for this channel+country
-      removeConfigsForChannel(channel.id, countryCode);
+      // Sync merchant configs with the new active PSP
+      syncPSPForChannel(channel.id, countryCode, pspId);
+    } else {
+      // Deactivating - just deactivate without warning
+      const updatedAssignments = currentAssignments.map((a) =>
+        a.countryCode === countryCode && a.pspId === pspId
+          ? { ...a, isActive: false }
+          : a
+      );
+
+      updateChannel(channel.id, {
+        pspAssignments: updatedAssignments,
+      });
+    }
+  };
+
+  const handleRemoveAssignment = (countryCode: string, pspId: string) => {
+    const pspName = getPSPName(pspId);
+    const countryName = getCountryName(countryCode);
+    const currentAssignments = channel.pspAssignments || [];
+    const assignmentToRemove = currentAssignments.find(
+      (a) => a.countryCode === countryCode && a.pspId === pspId
+    );
+
+    if (!assignmentToRemove) return;
+
+    // If it's active, warn that it will affect merchants
+    if (assignmentToRemove.isActive) {
+      if (
+        confirm(
+          `¿Está seguro de eliminar la asignación activa de ${pspName} para ${countryName}?\n\n` +
+          `Nota: Las configuraciones de merchants que usan este provider en este país permanecerán pero quedarán sin provider activo asignado.`
+        )
+      ) {
+        const updatedAssignments = currentAssignments.filter(
+          (a) => !(a.countryCode === countryCode && a.pspId === pspId)
+        );
+
+        updateChannel(channel.id, {
+          pspAssignments: updatedAssignments,
+        });
+      }
+    } else {
+      // If inactive, just remove without special warning
+      if (
+        confirm(
+          `¿Está seguro de eliminar la asignación inactiva de ${pspName} para ${countryName}?`
+        )
+      ) {
+        const updatedAssignments = currentAssignments.filter(
+          (a) => !(a.countryCode === countryCode && a.pspId === pspId)
+        );
+
+        updateChannel(channel.id, {
+          pspAssignments: updatedAssignments,
+        });
+      }
     }
   };
 

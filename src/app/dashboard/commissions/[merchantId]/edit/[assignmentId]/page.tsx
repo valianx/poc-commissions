@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Building2, Save, TrendingUp } from "lucide-react";
+import { CollapsibleInfo } from "@/components/ui/collapsible-info";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -431,11 +432,9 @@ export default function EditCommissionPage() {
               </div>
             </div>
 
-            <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
-              <p className="text-sm text-blue-900">
-                <strong>Nota:</strong> Puede configurar solo porcentaje, solo fijo, o ambos.
-              </p>
-            </div>
+            <CollapsibleInfo title="Nota" variant="info">
+              Puede configurar solo porcentaje, solo fijo, o ambos.
+            </CollapsibleInfo>
           </CardContent>
         </Card>
 
@@ -461,13 +460,6 @@ export default function EditCommissionPage() {
           </CardHeader>
           {enableMinimumCommission && (
             <CardContent className="space-y-4">
-              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 mb-4">
-                <p className="text-sm text-blue-900">
-                  <strong>¿Cómo funciona?</strong> Si la transacción está dentro de este rango, se aplica esta comisión.
-                  Si está fuera del rango, se aplica la Comisión Base.
-                </p>
-              </div>
-
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="minTransactionAmount">Desde (monto mínimo) *</Label>
@@ -528,12 +520,12 @@ export default function EditCommissionPage() {
                 </div>
               </div>
 
-              <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
-                <p className="text-sm text-amber-900">
-                  <strong>Ejemplo:</strong> Si configura rango 0-100,000 con 6%, las transacciones de hasta $100,000
-                  cobrarán 6%. Las transacciones superiores a $100,000 cobrarán la Comisión Base (ej: 5%).
-                </p>
-              </div>
+              <CollapsibleInfo title="¿Cómo funciona?" variant="info">
+                Si la transacción está dentro de este rango, se aplica esta comisión.
+                Si está fuera del rango, se aplica la Comisión Base.
+                <br /><br />
+                <strong>Ejemplo:</strong> Rango 0-100,000 con 6% → transacciones hasta $100,000 cobran 6%. Superiores a $100,000 cobran la Comisión Base.
+              </CollapsibleInfo>
             </CardContent>
           )}
         </Card>
@@ -608,12 +600,10 @@ export default function EditCommissionPage() {
                 </div>
               </div>
 
-              <div className="rounded-md border border-green-200 bg-green-50 p-3">
-                <p className="text-sm text-green-900">
-                  <strong>Ejemplo:</strong> Si el umbral es 1,000,000 y el merchant ya procesó esa cantidad en este
-                  canal/país, se aplicará la comisión Tier 2 en lugar de la base.
-                </p>
-              </div>
+              <CollapsibleInfo title="¿Cómo funciona?" variant="success">
+                Si el umbral es 1,000,000 y el merchant ya procesó esa cantidad en este canal/país,
+                se aplicará la comisión Tier 2 en lugar de la base.
+              </CollapsibleInfo>
             </CardContent>
           )}
         </Card>

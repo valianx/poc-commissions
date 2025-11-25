@@ -14,6 +14,13 @@ import { STORAGE_KEYS, StorageMetadata } from "@/types/storage";
 export function seedDatabase() {
   if (typeof window === "undefined") return;
 
+  // Check if seeding should be skipped (user cleared data intentionally)
+  const skipSeed = localStorage.getItem("zippy:skip_seed");
+  if (skipSeed === "true") {
+    console.log("Seeding skipped by user preference");
+    return;
+  }
+
   // Check if already seeded
   const metadata = localStorage.getItem(STORAGE_KEYS.METADATA);
   if (metadata) {

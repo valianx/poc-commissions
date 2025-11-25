@@ -1,20 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function ClearStoragePage() {
-  const router = useRouter();
-  const [cleared, setCleared] = useState(false);
+  const [action, setAction] = useState<"none" | "reseed" | "clear">("none");
 
-  const handleClearStorage = () => {
+  const handleReseed = () => {
     if (typeof window !== "undefined") {
       localStorage.clear();
-      setCleared(true);
+      setAction("reseed");
 
-      // Hard reload after 2 seconds to force Zustand stores to reinitialize
+      // Hard reload after 2 seconds to force Zustand stores to reinitialize with seed data
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+    }
+  };
+
+  const handleClearAll = () => {
+    if (typeof window !== "undefined") {
+      // Clear localStorage
+      localStorage.clear();
+      // Set a flag to prevent seeding on next load
+      localStorage.setItem("zippy:skip_seed", "true");
+      setAction("clear");
+
+      // Hard reload after 2 seconds
       setTimeout(() => {
         window.location.href = "/";
       }, 2000);
@@ -25,24 +38,48 @@ export default function ClearStoragePage() {
     <div className="container mx-auto py-10">
       <Card className="max-w-md mx-auto">
         <CardHeader>
-          <CardTitle>Clear Local Storage</CardTitle>
+          <CardTitle>Gestión de Datos</CardTitle>
           <CardDescription>
-            This will clear all local data and reseed the database with fresh data including VAT configurations.
+            Opciones para restablecer o eliminar los datos de la aplicación.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!cleared ? (
-            <Button
-              onClick={handleClearStorage}
-              variant="destructive"
-              className="w-full"
-            >
-              Clear Storage & Reseed
-            </Button>
+          {action === "none" ? (
+            <>
+              <div className="space-y-2">
+                <Button
+                  onClick={handleReseed}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Restablecer Seed
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Elimina todos los datos y los reemplaza con los datos de ejemplo iniciales.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Button
+                  onClick={handleClearAll}
+                  variant="destructive"
+                  className="w-full"
+                >
+                  Eliminar Todos los Datos
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  Elimina todos los datos permanentemente. La aplicación quedará vacía.
+                </p>
+              </div>
+            </>
+          ) : action === "reseed" ? (
+            <div className="text-center space-y-2">
+              <p className="text-green-600 font-semibold">Datos restablecidos correctamente</p>
+              <p className="text-sm text-gray-600">Redirigiendo al inicio...</p>
+            </div>
           ) : (
             <div className="text-center space-y-2">
-              <p className="text-green-600 font-semibold">✓ Storage cleared successfully!</p>
-              <p className="text-sm text-gray-600">Redirecting to home page...</p>
+              <p className="text-green-600 font-semibold">Datos eliminados correctamente</p>
+              <p className="text-sm text-gray-600">Redirigiendo al inicio...</p>
             </div>
           )}
         </CardContent>

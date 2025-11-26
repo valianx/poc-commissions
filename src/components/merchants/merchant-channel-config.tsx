@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit, Trash2, X } from "lucide-react";
+import { Plus, Edit, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMerchantChannelConfigStore } from "@/lib/stores/merchant-channel-config.store";
 import { useChannelsStore } from "@/lib/stores/channels.store";
 import { Merchant } from "@/types/merchant";
@@ -48,6 +48,10 @@ export function MerchantChannelConfig({
   const [filterCountry, setFilterCountry] = useState<string>("");
   const [filterChannel, setFilterChannel] = useState<string>("");
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
   useEffect(() => {
     fetchConfigs();
     fetchChannels();
@@ -62,6 +66,18 @@ export function MerchantChannelConfig({
     if (filterChannel && config.channelId !== filterChannel) return false;
     return true;
   });
+
+  // Pagination calculations
+  const totalItems = filteredConfigs.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedConfigs = filteredConfigs.slice(startIndex, endIndex);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterCountry, filterChannel]);
 
   // Get available PSPs for selected country and channel
   const getAvailablePSPs = () => {
@@ -390,7 +406,7 @@ export function MerchantChannelConfig({
                             <Label>País</Label>
                             <Input
                               value={getCountryName(
-                                filteredConfigs.find((c) => c.id === editingConfigId)
+                                paginatedConfigs.find((c) => c.id === editingConfigId)
                                   ?.countryCode || ""
                               )}
                               disabled
@@ -401,7 +417,7 @@ export function MerchantChannelConfig({
                             <Label>Canal</Label>
                             <Input
                               value={getChannelName(
-                                filteredConfigs.find((c) => c.id === editingConfigId)
+                                paginatedConfigs.find((c) => c.id === editingConfigId)
                                   ?.channelId || ""
                               )}
                               disabled
@@ -444,7 +460,7 @@ export function MerchantChannelConfig({
                     </td>
                   </tr>
                 )}
-                {filteredConfigs.map((config) => {
+                {paginatedConfigs.map((config) => {
                   if (editingConfigId === config.id) return null;
                   return (
                     <tr key={config.id} className="border-b hover:bg-muted/50">
@@ -496,6 +512,48 @@ export function MerchantChannelConfig({
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t pt-4">
+            <div className="text-sm text-muted-foreground">
+              Mostrando {startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} configuraciones
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Anterior
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                    className="w-8 h-8 p-0"
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Siguiente
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>

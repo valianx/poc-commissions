@@ -25,6 +25,8 @@ import {
   CheckCircle2,
   XCircle,
   Filter,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -64,6 +66,10 @@ export default function MerchantCommissionsPage() {
   const [filterCountry, setFilterCountry] = useState<string>("all");
   const [filterChannel, setFilterChannel] = useState<string>("all");
   const [filterPSP, setFilterPSP] = useState<string>("all");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     fetchMerchants();
@@ -303,6 +309,18 @@ export default function MerchantCommissionsPage() {
     return true;
   });
 
+  // Pagination calculations
+  const totalItems = filteredRows.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedRows = filteredRows.slice(startIndex, endIndex);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, filterCountry, filterChannel, filterPSP]);
+
   const configuredCount = allRows.filter((r) => r.isConfigured).length;
   const unconfiguredCount = allRows.filter((r) => !r.isConfigured).length;
   const progressPercent =
@@ -494,7 +512,7 @@ export default function MerchantCommissionsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRows.length === 0 ? (
+                {paginatedRows.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8">
                       <p className="text-muted-foreground">
@@ -503,7 +521,7 @@ export default function MerchantCommissionsPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredRows.map((row, idx) => (
+                  paginatedRows.map((row, idx) => (
                     <TableRow key={idx}>
                       <TableCell>
                         <Badge variant="outline">{row.countryCode}</Badge>
@@ -632,6 +650,48 @@ export default function MerchantCommissionsPage() {
               </TableBody>
             </Table>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t pt-4 mt-4">
+              <div className="text-sm text-muted-foreground">
+                Mostrando {startIndex + 1} a {Math.min(endIndex, totalItems)} de {totalItems} configuraciones
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

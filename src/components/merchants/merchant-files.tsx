@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useMerchantFilesStore } from "@/lib/stores/merchant-files.store";
 import { MerchantFileCategory } from "@/types/merchant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +34,10 @@ import {
   File,
   Plus,
   Loader2,
+  X,
+  CloudUpload,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { formatDateTime } from "@/lib/utils";
 
 interface MerchantFilesProps {
@@ -101,23 +104,65 @@ export function MerchantFiles({ merchantId }: MerchantFilesProps) {
   const [description, setDescription] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchFilesByMerchant(merchantId);
   }, [merchantId, fetchFilesByMerchant]);
 
+  const validateFile = useCallback((file: File): boolean => {
+    // Check file size (max 10MB for localStorage limitations)
+    if (file.size > 10 * 1024 * 1024) {
+      setError("El archivo no debe superar los 10MB");
+      return false;
+    }
+    // Check file type
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "image/png",
+      "image/jpeg",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Formato de archivo no permitido");
+      return false;
+    }
+    return true;
+  }, [setError]);
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // Check file size (max 10MB for localStorage limitations)
-      if (file.size > 10 * 1024 * 1024) {
-        setError("El archivo no debe superar los 10MB");
-        return;
-      }
+    if (file && validateFile(file)) {
       setSelectedFile(file);
     }
   };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file && validateFile(file)) {
+      setSelectedFile(file);
+    }
+  }, [validateFile]);
 
   const handleUpload = async () => {
     if (!selectedFile) return;
@@ -179,33 +224,78 @@ export function MerchantFiles({ merchantId }: MerchantFilesProps) {
               </DialogHeader>
               <DialogBody>
                 <div className="space-y-4">
+                  {/* Dropzone */}
                   <div className="space-y-2">
-                    <Label htmlFor="file">Archivo</Label>
-                    <Input
-                      id="file"
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileSelect}
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Formatos permitidos: PDF, DOC, DOCX, XLS, XLSX, PNG, JPG. Máximo 10MB.
-                    </p>
-                  </div>
+                    <Label>Archivo</Label>
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={cn(
+                        "relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors cursor-pointer",
+                        isDragging
+                          ? "border-primary bg-primary/5"
+                          : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50",
+                        selectedFile && "border-green-500 bg-green-50"
+                      )}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={handleFileSelect}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                        className="hidden"
+                      />
 
-                  {selectedFile && (
-                    <div className="rounded-md bg-muted p-3">
-                      <div className="flex items-center gap-2">
-                        {getFileIcon(selectedFile.type)}
-                        <div>
-                          <p className="text-sm font-medium">{selectedFile.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatFileSize(selectedFile.size)}
+                      {selectedFile ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                            {getFileIcon(selectedFile.type)}
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-foreground">{selectedFile.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatFileSize(selectedFile.size)}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedFile(null);
+                              if (fileInputRef.current) {
+                                fileInputRef.current.value = "";
+                              }
+                            }}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="mr-1 h-3 w-3" />
+                            Quitar archivo
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                            <CloudUpload className="h-6 w-6 text-muted-foreground" />
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-foreground">
+                              Arrastra un archivo aquí
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              o haz clic para seleccionar
+                            </p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            PDF, DOC, DOCX, XLS, XLSX, PNG, JPG (máx. 10MB)
                           </p>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  )}
+                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="category">Categoría</Label>

@@ -279,15 +279,16 @@ export default function EditCommissionPage() {
         console.log("Form validation failed:", errors);
         setSaveError("Por favor complete todos los campos requeridos correctamente");
       })} className="space-y-6">
-        {/* Configuration Info (Read-only) */}
+        {/* General Configuration */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-gray-500" />
-              <CardTitle>Información de Configuración</CardTitle>
+              <CardTitle>Configuración General</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-4">
+            {/* Country, Channel, Status */}
             <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <p className="text-sm text-muted-foreground">País</p>
@@ -297,7 +298,7 @@ export default function EditCommissionPage() {
                 <p className="text-sm text-muted-foreground">Canal</p>
                 <p className="font-medium">{channel?.name || assignment.channelCode}</p>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="status">Estado *</Label>
                 <select
                   id="status"
@@ -314,17 +315,10 @@ export default function EditCommissionPage() {
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Description Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Descripción y VAT</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="space-y-2">
+            {/* Description and VAT */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1">
                 <Label htmlFor="description">Descripción (Opcional)</Label>
                 <Input
                   id="description"
@@ -333,9 +327,8 @@ export default function EditCommissionPage() {
                   placeholder="Ej: Comisión especial para promoción navideña"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="vatPercentage">VAT/IVA (Opcional) %</Label>
+              <div className="space-y-1">
+                <Label htmlFor="vatPercentage">VAT/IVA %</Label>
                 <Input
                   id="vatPercentage"
                   type="number"
@@ -343,24 +336,14 @@ export default function EditCommissionPage() {
                   min="0"
                   max="100"
                   {...register("vatPercentage")}
-                  placeholder="Ej: 19 (para 19% de IVA)"
+                  placeholder="Ej: 19"
                 />
-                <p className="text-xs text-muted-foreground">
-                  El VAT se aplicará sobre la comisión.
-                </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Date Range Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Vigencia de la Comisión</CardTitle>
-          </CardHeader>
-          <CardContent>
+            {/* Date Range */}
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="startDate">Fecha de Inicio *</Label>
                 <Input
                   id="startDate"
@@ -371,8 +354,7 @@ export default function EditCommissionPage() {
                   <p className="text-sm text-red-500">{errors.startDate.message}</p>
                 )}
               </div>
-
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="endDate">Fecha de Fin (Opcional)</Label>
                 <Input
                   id="endDate"
@@ -383,6 +365,20 @@ export default function EditCommissionPage() {
                   <p className="text-sm text-red-500">{errors.endDate.message}</p>
                 )}
               </div>
+            </div>
+
+            {/* Assigned By */}
+            <div className="space-y-1">
+              <Label htmlFor="assignedBy">Asignado Por *</Label>
+              <Input
+                id="assignedBy"
+                type="email"
+                {...register("assignedBy")}
+                placeholder="admin@zippy.com"
+              />
+              {errors.assignedBy && (
+                <p className="text-sm text-red-500">{errors.assignedBy.message}</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -606,27 +602,6 @@ export default function EditCommissionPage() {
               </CollapsibleInfo>
             </CardContent>
           )}
-        </Card>
-
-        {/* Assigned By */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Información de Asignación</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="assignedBy">Asignado Por *</Label>
-              <Input
-                id="assignedBy"
-                type="email"
-                {...register("assignedBy")}
-                placeholder="admin@zippy.com"
-              />
-              {errors.assignedBy && (
-                <p className="text-sm text-red-500">{errors.assignedBy.message}</p>
-              )}
-            </div>
-          </CardContent>
         </Card>
 
         {/* Error Message */}

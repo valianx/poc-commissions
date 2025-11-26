@@ -285,18 +285,18 @@ export default function ConfigureSimpleCommissionPage() {
         console.log("Form validation failed:", errors);
         setSaveError("Por favor complete todos los campos requeridos correctamente");
       })} className="space-y-6">
-        {/* Merchant and Selection Info */}
+        {/* General Configuration */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Building2 className="h-5 w-5 text-gray-500" />
-              <CardTitle>Configuración Base</CardTitle>
+              <CardTitle>Configuración General</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              {/* Country Selection */}
-              <div className="space-y-2">
+            {/* Country and Channel Selection */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1">
                 <Label htmlFor="countryCode">
                   <MapPin className="mr-1 inline h-4 w-4" />
                   País *
@@ -304,7 +304,7 @@ export default function ConfigureSimpleCommissionPage() {
                 <select
                   id="countryCode"
                   {...register("countryCode")}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
                   <option value="">Seleccionar país</option>
                   {merchant.countries.map((country) => (
@@ -318,8 +318,7 @@ export default function ConfigureSimpleCommissionPage() {
                 )}
               </div>
 
-              {/* Channel Selection */}
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="channelCode">
                   <CreditCard className="mr-1 inline h-4 w-4" />
                   Canal *
@@ -328,13 +327,13 @@ export default function ConfigureSimpleCommissionPage() {
                   id="channelCode"
                   {...register("channelCode")}
                   disabled={!selectedCountry}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
                 >
                   <option value="">
                     {!selectedCountry
                       ? "Primero seleccione un país"
                       : availableChannels.length === 0
-                      ? "No hay canales configurados para este país"
+                      ? "No hay canales configurados"
                       : "Seleccionar canal"}
                   </option>
                   {availableChannels.map((channel) => (
@@ -347,96 +346,76 @@ export default function ConfigureSimpleCommissionPage() {
                   <p className="text-sm text-red-500">{errors.channelCode.message}</p>
                 )}
                 {selectedCountry && availableChannels.length === 0 && (
-                  <p className="text-sm text-amber-600">
-                    Este merchant no tiene canales configurados para {selectedCountry}.
-                    Configure canales en la página del merchant.
+                  <p className="text-xs text-amber-600">
+                    No hay canales configurados para {selectedCountry}.
                   </p>
                 )}
               </div>
             </div>
 
-            {/* Description Field */}
-            <div className="space-y-2">
-              <Label htmlFor="description">
-                Descripción (Opcional)
-              </Label>
-              <Input
-                id="description"
-                type="text"
-                {...register("description")}
-                placeholder="Ej: Comisión especial para promoción navideña"
-              />
-            </div>
-
-            {/* VAT Percentage Field */}
-            <div className="space-y-2">
-              <Label htmlFor="vatPercentage">
-                VAT/IVA (Opcional) %
-              </Label>
-              <Input
-                id="vatPercentage"
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                {...register("vatPercentage")}
-                placeholder="Ej: 19 (para 19% de IVA)"
-              />
-              <p className="text-xs text-muted-foreground">
-                El VAT se aplicará sobre la comisión.
-              </p>
-            </div>
-
-            {/* Date Range Section */}
-            <div className="rounded-md border border-blue-200 bg-blue-50 p-4 space-y-4">
-              <h3 className="text-sm font-semibold text-blue-900">Vigencia de la Comisión</h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">
-                    Fecha de Inicio *
-                  </Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    {...register("startDate")}
-                  />
-                  {errors.startDate && (
-                    <p className="text-sm text-red-500">{errors.startDate.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">
-                    Fecha de Fin (Opcional)
-                  </Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    {...register("endDate")}
-                  />
-                  {errors.endDate && (
-                    <p className="text-sm text-red-500">{errors.endDate.message}</p>
-                  )}
-                </div>
+            {/* Description and VAT */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="description">Descripción (Opcional)</Label>
+                <Input
+                  id="description"
+                  type="text"
+                  {...register("description")}
+                  placeholder="Ej: Comisión promoción navideña"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="vatPercentage">VAT/IVA %</Label>
+                <Input
+                  id="vatPercentage"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  {...register("vatPercentage")}
+                  placeholder="Ej: 19"
+                />
               </div>
             </div>
 
-            {/* Summary */}
-            <div className="space-y-2">
-              <Label>Configurando</Label>
-              <div className="rounded-md border bg-muted p-3">
-                <p className="text-sm font-medium">
-                  {selectedCountry && selectedChannel ? (
-                    <>
-                      {selectedCountry} • {getChannelName(selectedChannel)}
-                    </>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      Seleccione país y canal
-                    </span>
-                  )}
-                </p>
+            {/* Date Range */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="startDate">Fecha de Inicio *</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  {...register("startDate")}
+                />
+                {errors.startDate && (
+                  <p className="text-sm text-red-500">{errors.startDate.message}</p>
+                )}
               </div>
+              <div className="space-y-1">
+                <Label htmlFor="endDate">Fecha de Fin (Opcional)</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  {...register("endDate")}
+                />
+                {errors.endDate && (
+                  <p className="text-sm text-red-500">{errors.endDate.message}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Assigned By */}
+            <div className="space-y-1">
+              <Label htmlFor="assignedBy">Asignado Por *</Label>
+              <Input
+                id="assignedBy"
+                type="email"
+                {...register("assignedBy")}
+                placeholder="admin@zippy.com"
+              />
+              {errors.assignedBy && (
+                <p className="text-sm text-red-500">{errors.assignedBy.message}</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -660,27 +639,6 @@ export default function ConfigureSimpleCommissionPage() {
               </CollapsibleInfo>
             </CardContent>
           )}
-        </Card>
-
-        {/* Assigned By */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Información de Asignación</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="assignedBy">Asignado Por *</Label>
-              <Input
-                id="assignedBy"
-                type="email"
-                {...register("assignedBy")}
-                placeholder="admin@zippy.com"
-              />
-              {errors.assignedBy && (
-                <p className="text-sm text-red-500">{errors.assignedBy.message}</p>
-              )}
-            </div>
-          </CardContent>
         </Card>
 
         {/* Error Message */}

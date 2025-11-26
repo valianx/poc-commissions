@@ -43,7 +43,7 @@ interface MerchantFilesProps {
 
 const FILE_CATEGORIES: { value: MerchantFileCategory; label: string }[] = [
   { value: "CONTRACT", label: "Contrato" },
-  { value: "ADDENDUM", label: "Adenda" },
+  { value: "ADDENDUM", label: "Anexo" },
   { value: "LEGAL", label: "Legal" },
   { value: "COMPLIANCE", label: "Compliance" },
   { value: "INVOICE", label: "Factura" },

@@ -26,7 +26,6 @@ const editCommissionSchema = z.object({
   status: z.enum(["ACTIVE", "SCHEDULED", "EXPIRED", "CANCELLED"]),
   basePercentageValue: z.string().optional(),
   baseFixedValue: z.string().optional(),
-  assignedBy: z.string().email("Debe ser un email válido"),
   // Minimum commission (optional - single range)
   enableMinimumCommission: z.boolean().optional(),
   minTransactionAmount: z.string().optional(),
@@ -110,7 +109,6 @@ export default function EditCommissionPage() {
       status: "ACTIVE",
       basePercentageValue: "",
       baseFixedValue: "",
-      assignedBy: "admin@zippy.com",
       enableMinimumCommission: false,
       minTransactionAmount: "",
       maxTransactionAmount: "",
@@ -144,7 +142,6 @@ export default function EditCommissionPage() {
         baseFixedValue: assignment.baseFixedValue?.toString() || "",
         startDate: assignment.startDate ? new Date(assignment.startDate).toISOString().split('T')[0] : "",
         endDate: assignment.endDate ? new Date(assignment.endDate).toISOString().split('T')[0] : "",
-        assignedBy: assignment.assignedBy,
         // Minimum commission
         enableMinimumCommission: hasMinimumCommission,
         minTransactionAmount: hasMinimumCommission
@@ -246,7 +243,7 @@ export default function EditCommissionPage() {
         // Clear legacy ranges when using new structure
         commissionRanges: [],
         status: data.status,
-        assignedBy: data.assignedBy,
+        // assignedBy is not editable - keep original value
       });
 
       router.push(`/dashboard/commissions/${merchantId}`);
@@ -368,18 +365,10 @@ export default function EditCommissionPage() {
               </div>
             </div>
 
-            {/* Assigned By */}
+            {/* Created By */}
             <div className="space-y-1">
-              <Label htmlFor="assignedBy">Asignado Por<RequiredIndicator /></Label>
-              <Input
-                id="assignedBy"
-                type="email"
-                {...register("assignedBy")}
-                placeholder="admin@zippy.com"
-              />
-              {errors.assignedBy && (
-                <p className="text-sm text-red-500">{errors.assignedBy.message}</p>
-              )}
+              <Label>Creado Por</Label>
+              <p className="text-sm font-medium py-2">{assignment.assignedBy}</p>
             </div>
           </CardContent>
         </Card>

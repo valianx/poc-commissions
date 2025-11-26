@@ -28,7 +28,6 @@ const configureSimpleCommissionSchema = z.object({
   endDate: z.string().optional(),
   basePercentageValue: z.string().optional(),
   baseFixedValue: z.string().optional(),
-  assignedBy: z.string().email("Debe ser un email válido"),
   // Minimum commission (optional - single range)
   enableMinimumCommission: z.boolean().optional(),
   minTransactionAmount: z.string().optional(),
@@ -118,7 +117,6 @@ export default function ConfigureSimpleCommissionPage() {
       vatPercentage: "",
       startDate: new Date().toISOString().split('T')[0],
       endDate: "",
-      assignedBy: "admin@zippy.com",
       enableMinimumCommission: false,
       minTransactionAmount: "",
       maxTransactionAmount: "",
@@ -244,7 +242,7 @@ export default function ConfigureSimpleCommissionPage() {
         minimumCommission,
         tier2Commission,
         status,
-        assignedBy: data.assignedBy,
+        assignedBy: "admin@zippy.com",
       };
 
       createAssignment(assignmentData);
@@ -405,18 +403,10 @@ export default function ConfigureSimpleCommissionPage() {
               </div>
             </div>
 
-            {/* Assigned By */}
+            {/* Created By */}
             <div className="space-y-1">
-              <Label htmlFor="assignedBy">Asignado Por<RequiredIndicator /></Label>
-              <Input
-                id="assignedBy"
-                type="email"
-                {...register("assignedBy")}
-                placeholder="admin@zippy.com"
-              />
-              {errors.assignedBy && (
-                <p className="text-sm text-red-500">{errors.assignedBy.message}</p>
-              )}
+              <Label>Creado Por</Label>
+              <p className="text-sm font-medium py-2">admin@zippy.com</p>
             </div>
           </CardContent>
         </Card>

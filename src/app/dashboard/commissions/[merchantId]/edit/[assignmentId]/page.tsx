@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Building2, Save, TrendingUp } from "lucide-react";
 import { CollapsibleInfo } from "@/components/ui/collapsible-info";
+import { RequiredIndicator } from "@/components/ui/required-indicator";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -299,7 +300,7 @@ export default function EditCommissionPage() {
                 <p className="font-medium">{channel?.name || assignment.channelCode}</p>
               </div>
               <div className="space-y-1">
-                <Label htmlFor="status">Estado *</Label>
+                <Label htmlFor="status">Estado<RequiredIndicator /></Label>
                 <select
                   id="status"
                   {...register("status")}
@@ -319,12 +320,12 @@ export default function EditCommissionPage() {
             {/* Description and VAT */}
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-1">
-                <Label htmlFor="description">Descripción (Opcional)</Label>
+                <Label htmlFor="description">Descripción</Label>
                 <Input
                   id="description"
                   type="text"
                   {...register("description")}
-                  placeholder="Ej: Comisión especial para promoción navideña"
+                  placeholder="Ej: Comisión promoción navideña"
                 />
               </div>
               <div className="space-y-1">
@@ -344,7 +345,7 @@ export default function EditCommissionPage() {
             {/* Date Range */}
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-1">
-                <Label htmlFor="startDate">Fecha de Inicio *</Label>
+                <Label htmlFor="startDate">Fecha de Inicio<RequiredIndicator /></Label>
                 <Input
                   id="startDate"
                   type="date"
@@ -355,7 +356,7 @@ export default function EditCommissionPage() {
                 )}
               </div>
               <div className="space-y-1">
-                <Label htmlFor="endDate">Fecha de Fin (Opcional)</Label>
+                <Label htmlFor="endDate">Fecha de Fin</Label>
                 <Input
                   id="endDate"
                   type="date"
@@ -369,7 +370,7 @@ export default function EditCommissionPage() {
 
             {/* Assigned By */}
             <div className="space-y-1">
-              <Label htmlFor="assignedBy">Asignado Por *</Label>
+              <Label htmlFor="assignedBy">Asignado Por<RequiredIndicator /></Label>
               <Input
                 id="assignedBy"
                 type="email"
@@ -439,7 +440,7 @@ export default function EditCommissionPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Comisión por Rango Mínimo (Opcional)</CardTitle>
+                <CardTitle>Comisión por Rango Mínimo</CardTitle>
                 <p className="text-sm text-muted-foreground">
                   Aplica una comisión diferente para transacciones de monto bajo (dentro del rango especificado)
                 </p>
@@ -458,7 +459,7 @@ export default function EditCommissionPage() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="minTransactionAmount">Desde (monto mínimo) *</Label>
+                  <Label htmlFor="minTransactionAmount">Desde (monto mínimo)<RequiredIndicator /></Label>
                   <Input
                     id="minTransactionAmount"
                     type="number"
@@ -476,7 +477,7 @@ export default function EditCommissionPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="maxTransactionAmount">Hasta (monto máximo) *</Label>
+                  <Label htmlFor="maxTransactionAmount">Hasta (monto máximo)<RequiredIndicator /></Label>
                   <Input
                     id="maxTransactionAmount"
                     type="number"
@@ -533,7 +534,7 @@ export default function EditCommissionPage() {
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-green-600" />
                 <div>
-                  <CardTitle>Comisión Tier 2 (Opcional)</CardTitle>
+                  <CardTitle>Comisión Tier 2</CardTitle>
                   <p className="text-sm text-muted-foreground">
                     Se activa cuando el merchant alcanza un monto acumulado de transacciones en este canal/país
                   </p>
@@ -552,7 +553,7 @@ export default function EditCommissionPage() {
           {enableTier2 && (
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="tier2CumulativeThreshold">Umbral Acumulado *</Label>
+                <Label htmlFor="tier2CumulativeThreshold">Umbral Acumulado<RequiredIndicator /></Label>
                 <Input
                   id="tier2CumulativeThreshold"
                   type="number"

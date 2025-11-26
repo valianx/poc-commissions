@@ -166,6 +166,16 @@ Vacío/Otro = Cancelar operación
 - [ ] El estado se muestra con badge de color
 - [ ] Acciones: Ver, Editar, Eliminar
 
+#### Estructura del Detalle del Merchant
+
+La página de detalle del merchant está organizada en 3 tabs:
+
+| Tab | Contenido |
+|-----|-----------|
+| Información Básica | Datos generales y configuración de callbacks |
+| Configuración de Canales | Asignación de canales por país con provider |
+| Archivos | Gestión de documentos del merchant |
+
 ---
 
 ### HU-MER-002: Crear Nuevo Merchant
@@ -246,6 +256,75 @@ Vacío/Otro = Cancelar operación
 
 ---
 
+### HU-MER-005: Gestión de Archivos del Merchant
+
+**Como** administrador del sistema
+**Quiero** gestionar los archivos y documentos asociados a cada merchant
+**Para** mantener centralizada la documentación contractual y legal
+
+#### Criterios de Aceptación
+
+- [ ] Tab "Archivos" visible en la página de detalle y edición del merchant
+- [ ] Tabla de archivos con columnas: Archivo, Categoría, Tamaño, Subido Por, Fecha, Acciones
+- [ ] Botón "Subir Archivo" abre modal con dropzone
+- [ ] Drag & Drop para selección de archivo
+- [ ] Selección de categoría del archivo
+- [ ] Campo opcional de descripción
+- [ ] Descarga de archivos con un clic
+- [ ] Eliminación de archivos con confirmación
+
+#### Campos del Archivo
+
+| Campo | Tipo | Requerido | Formato/Validación |
+|-------|------|-----------|-------------------|
+| Archivo | File | Sí | Máx. 10MB |
+| Categoría | Select | Sí | Ver categorías abajo |
+| Descripción | Texto | No | Máx. 500 caracteres |
+
+#### Categorías de Archivos
+
+| Código | Etiqueta | Descripción |
+|--------|----------|-------------|
+| CONTRACT | Contrato | Contratos principales de servicio |
+| ADDENDUM | Anexo | Anexos y adendas a contratos |
+| LEGAL | Legal | Documentos legales varios |
+| COMPLIANCE | Compliance | Documentos de cumplimiento normativo |
+| INVOICE | Factura | Facturas y documentos de cobro |
+| OTHER | Otro | Otros documentos |
+
+#### Formatos de Archivo Permitidos
+
+| Tipo | Extensiones |
+|------|-------------|
+| Documentos PDF | .pdf |
+| Microsoft Word | .doc, .docx |
+| Microsoft Excel | .xls, .xlsx |
+| Imágenes | .png, .jpg, .jpeg |
+
+#### Interfaz de Subida
+
+El modal de subida incluye:
+
+1. **Dropzone**: Área de arrastrar y soltar con feedback visual
+   - Estado normal: Borde punteado gris
+   - Arrastrando: Borde primario con fondo suave
+   - Archivo seleccionado: Borde verde con ícono del archivo
+2. **Vista previa**: Nombre y tamaño del archivo seleccionado
+3. **Botón quitar**: Permite descartar el archivo antes de subir
+4. **Select de categoría**: Dropdown con las categorías disponibles
+5. **Campo descripción**: Input opcional para describir el archivo
+
+#### Reglas de Negocio - Archivos
+
+| Regla | Descripción |
+|-------|-------------|
+| RN-MER-004 | El tamaño máximo por archivo es 10MB (limitación localStorage en POC) |
+| RN-MER-005 | Solo se permiten formatos definidos en la lista |
+| RN-MER-006 | Los archivos se almacenan en base64 en localStorage (POC) |
+| RN-MER-007 | El campo "Subido Por" se asigna automáticamente |
+
+---
+
 ## Módulo de Comisiones
 
 ### HU-COM-001: Visualización de Comisiones por Merchant
@@ -285,7 +364,7 @@ Vacío/Otro = Cancelar operación
 | VAT/IVA | Número | No | 0-100 (se convierte a decimal) |
 | Fecha Inicio | Fecha | Sí | >= Hoy |
 | Fecha Fin | Fecha | No | > Fecha Inicio |
-| Asignado Por | Email | Sí | Email válido |
+| Creado Por | Email | Solo lectura | Se asigna automáticamente al usuario actual |
 
 #### Sección 2: Comisión Base
 

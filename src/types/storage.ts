@@ -8,6 +8,8 @@ export const STORAGE_KEYS = {
   MERCHANT_TAX_CONFIGS: "zippy:merchant_tax_configs",
   PSP_COMMISSIONS: "zippy:psp_commissions",
   MERCHANT_CHANNEL_CONFIGS: "zippy:merchant_channel_configs",
+  MERCHANT_FILES: "zippy:merchant_files",
+  MERCHANT_FILE_DATA: "zippy:merchant_file_data",
   METADATA: "zippy:metadata",
 } as const;
 
